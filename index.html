@@ -1,0 +1,123 @@
+<html>
+	<head>
+		<script src='js/three.min.js'></script>
+		<script src='js/terrain.js'></script>
+		<script src='js/cam.js'></script>
+		<title>Ski Resort Sim</title>
+	</head>
+	<body>
+		<div id='stats'></div>
+	</body>
+	<script>
+		let camera = null;
+		let clock = null;
+		let scene = null;
+		let godcam = null;
+		let targetLight = null
+		let sun = null;
+		let terrainG = null;
+		let terrainM = null;
+		let terrainO = null;
+		let grassTexture = null;
+		let heightmap = null;
+		let terrainMat = null;
+
+		let renderer = null;
+
+		const worldWidth=128;
+		const worldDepth=128;
+		const halfWW = worldWidth/2;
+		const halfWD = worldDepth/2;
+
+		const windowWidth = 800;
+		const windowHeight = 600;
+
+		const meshWidth = 26624;
+		const meshDepth = 26624;
+		const maxHeight = 3000;
+
+		heightmap = [];
+		for(let y=0;y<worldDepth;y++){
+			for(let x=0;x<worldWidth;x++){
+				const dist = Math.sqrt((x-halfWW)*(x-halfWW)+(y-halfWD)*(y-halfWD));
+				heightmap.push(
+					Math.max( 0,maxHeight*Math.cos( Math.PI*dist/Math.max(halfWW,halfWD) ) )
+				)
+			}
+		}
+
+		function init() {
+
+			camera = new THREE.PerspectiveCamera( 60, windowWidth / windowHeight, 1, 50000 );
+			camera.position.z = 10000;
+			camera.position.y = 20000;
+			camera.up = new THREE.Vector3(0,0,1);
+			camera.lookAt(0,0,3000);
+
+			godcam = new GodCam(camera, worldWidth, worldDepth, heightmap, meshWidth, meshDepth );
+
+
+			clock = new THREE.Clock();
+			
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x000000 );
+			scene.add( new THREE.AmbientLight( 0x444444 ) );
+
+			targetLight = new THREE.PointLight( 0xff0000, 5 );
+			targetLight.position.set( 1, 1, 1 );
+			targetLight.distance=200;
+			scene.add( targetLight );
+
+			sun = new THREE.PointLight( 0xffffff, 1 );
+			sun.position.set( 30000,30000,30000 );
+			scene.add( sun );
+
+			//scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
+
+			terrainG = new THREE.PlaneBufferGeometry( meshWidth, meshDepth, worldWidth - 1, worldDepth - 1 );
+
+			
+			makeTerrain(terrainG, worldWidth, worldDepth, heightmap);
+			console.log("HI");
+			grassTexture = new THREE.TextureLoader().load('img/noise.png');
+			terrainMat = new THREE.MeshPhongMaterial({map: grassTexture, color:0xffffff, shininess: 0, specular: 0xffffff,side:THREE.DoubleSide, vertexColors: THREE.VertexColors});
+			terrainM = new THREE.Mesh(terrainG, terrainMat);
+			scene.add(terrainM);
+			renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( windowWidth, windowHeight );
+			document.body.appendChild( renderer.domElement );
+			document.body.onkeydown = keydown;
+
+		}
+		function animate(){
+			requestAnimationFrame( animate );
+
+			render();
+
+
+		}
+		let et=0;
+		function render(){
+			var dt = clock.getDelta();
+			godcam.anim(dt);
+			renderer.render(scene, camera);
+		}
+		function keydown(event){
+			const oi = 3*(godcam.targetX + worldWidth*godcam.targetY);
+			terrainG.attributes.color.array[oi]=godcam.targetZ/maxHeight;
+			terrainG.attributes.color.array[oi+1]=0.5 + 0.5*godcam.targetZ/maxHeight;
+			terrainG.attributes.color.array[oi+2]=godcam.targetZ/maxHeight;
+			const {x, y, z} = godcam.keydown(event);
+			terrainG.attributes.color.array[3*(x+y*worldWidth)]=1;
+			terrainG.attributes.color.array[3*(x+y*worldWidth)+1]=0;
+			terrainG.attributes.color.array[3*(x+y*worldWidth)+2]=0;
+			terrainG.attributes.color.needsUpdate = true;
+			//targetLight.position.set(x, y, z+150);
+		}
+		init();
+		animate();
+	</script>
+</html>	
+
+
