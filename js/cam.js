@@ -59,16 +59,16 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 	this.keydown = (event)=>{
 		switch(event.key){
 			case 'w':
-				this.setTarget(this.targetX, this.targetY-1);
+				this.setTarget(this.targetX-1*Math.cos(this.targetYaw), this.targetY+1*Math.sin(this.targetYaw));
 				break;
 			case 's':
-				this.setTarget(this.targetX, this.targetY+1);
+				this.setTarget(this.targetX+1*Math.cos(this.targetYaw), this.targetY-1*Math.sin(this.targetYaw));
 				break;
 			case 'a':
-				this.setTarget(this.targetX-1, this.targetY);
+				this.setTarget(this.targetX+1*Math.sin(this.targetYaw), this.targetY+1*Math.cos(this.targetYaw));
 				break;
 			case 'd':
-				this.setTarget(this.targetX+1, this.targetY);
+				this.setTarget(this.targetX-1*Math.sin(this.targetYaw), this.targetY-1*Math.cos(this.targetYaw));
 				break;
 			case 'x':
 				this.radius*=1.1;

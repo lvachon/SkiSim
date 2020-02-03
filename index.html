@@ -79,14 +79,13 @@
 			//scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
 
 			terrainG = new THREE.PlaneBufferGeometry( meshWidth, meshDepth, worldWidth - 1, worldDepth - 1 );
-
-			
 			makeTerrain(terrainG, worldWidth, worldDepth, heightmap);
-			console.log("HI");
+
 			grassTexture = new THREE.TextureLoader().load('img/noise.png');
 			terrainMat = new THREE.MeshPhongMaterial({map: grassTexture, color:0xffffff, shininess: 0, specular: 0xffffff,side:THREE.DoubleSide, vertexColors: THREE.VertexColors});
 			terrainM = new THREE.Mesh(terrainG, terrainMat);
 			scene.add(terrainM);
+
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( windowWidth, windowHeight );
@@ -95,11 +94,13 @@
 			render_container.onmousedown = mousemove;
 
 			trees = new Tree();
-			for(let i=0;i<200000;i++){
-				const x = meshWidth * (Math.random()-0.5);
-				const y = meshDepth * (Math.random()-0.5);
-				const i = Math.round(worldWidth * (x/meshWidth + 0.5)) + worldWidth * Math.round(worldDepth * (y/meshDepth+0.5));
-				trees.offsets.push(x,y,heightmap[i]+10);
+			for(let i=0;i<20000;i++){
+				const x = worldWidth * Math.random();
+				const y = worldDepth * Math.random();
+				const px = meshWidth * ((x/worldWidth)-0.5);
+				const py = meshDepth * ((y/worldDepth)-0.5);
+
+				trees.offsets.push(px,py,iTerrain(x-0.5,y+0.5,worldWidth,worldDepth,heightmap)+10);
 			}
 			trees.init();
 			scene.add(trees.mesh);
