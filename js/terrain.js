@@ -42,9 +42,9 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	this.initTrees = (maxPerAcre=5)=>{
 		this.trees = new Tree();
 		for(let i=0;i<treemap.length;i++){
-			for(let j=0;j<maxPerAcre*this.treemap[i];j++){
+			for(let j=1;j<maxPerAcre*this.treemap[i];j++){
 				const x = (i%this.gridWidth)+Math.random();
-				const y = Math.floor(i/this.gridWidth)+Math.random();
+				const y = this.gridDepth - (Math.floor(i/this.gridWidth)+Math.random());
 				const px = this.meshWidth * ((x/this.gridWidth)-0.5);
 				const py = this.meshDepth * ((y/this.gridDepth)-0.5);
 				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y+0.5)+10);
@@ -54,14 +54,15 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	}
 
 	this.iTerrain = (x, y) => {
+		y=this.gridDepth-y;
 		let x1 = Math.floor(x);
 		let x2 = x1+1;
 		let y1 = Math.floor(y);
 		let y2 = y1+1;
 		if(x1<0){x1=0;}
 		if(y1<0){y1=0;}
-		if(x2>=this.gridWidth){x2=this.gridWidth;}
-		if(y2>=this.gridDepth){y2=this.gridDepth;}
+		if(x2>=this.gridWidth){x2=this.gridWidth-1;}
+		if(y2>=this.gridDepth){y2=this.gridDepth-1;}
 		let px = (x-x1)/(x2-x1);
 		let py = (y-y1)/(y2-y1);
 		if(x2==x1){px=0;}

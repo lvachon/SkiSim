@@ -4,6 +4,7 @@
 		<script src='js/terrain.js'></script>
 		<script src='js/cam.js'></script>
 		<script src='js/tree.js'></script>
+		<script src='img/washington.js'></script>
 		<title>Ski Resort Sim</title>
 	</head>
 	<body>
@@ -15,7 +16,6 @@
 		let clock = null;
 		let scene = null;
 		let godcam = null;
-		let targetLight = null
 		let sun = null;
 
 		let renderer = null;
@@ -25,8 +25,8 @@
 		const halfWW = gridWidth/2;
 		const halfWD = gridDepth/2;
 
-		const windowWidth = 800;
-		const windowHeight = 600;
+		const windowWidth = 1240;
+		const windowHeight = 768;
 
 		const meshWidth = 26624;
 		const meshDepth = 26624;
@@ -34,38 +34,23 @@
 
 		const selectedPoint = {x:0, y:0}
 
-		const heightmap = [];
-		const treemap = [];
-		for(let y=0;y<gridDepth;y++){
-			for(let x=0;x<gridWidth;x++){
-				const dist = Math.sqrt((x-halfWW)*(x-halfWW)+(y-halfWD)*(y-halfWD));
-				const val = Math.max( 0,maxHeight*Math.cos( Math.PI*dist/Math.max(halfWW,halfWD) ) );
-				heightmap.push(val);
-				treemap.push(1.0-val/maxHeight);
-			}
-		}
+		let treemap = [];
+		heightmap = heightmap.map(x=>maxHeight*x/255.0);
+		treemap = heightmap.map(x=>1-x/maxHeight);
 
 		function init() {
-
 			camera = new THREE.PerspectiveCamera( 60, windowWidth / windowHeight, 1, 50000 );
 			camera.position.z = 10000;
 			camera.position.y = 20000;
 			camera.up = new THREE.Vector3(0,0,1);
 			camera.lookAt(0,0,3000);
-
 			godcam = new GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, windowWidth, windowHeight );
-
 
 			clock = new THREE.Clock();
 			
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0x000000 );
 			scene.add( new THREE.AmbientLight( 0x444444 ) );
-
-			targetLight = new THREE.PointLight( 0xff0000, 5 );
-			targetLight.position.set( 1, 1, 1 );
-			targetLight.distance=200;
-			scene.add( targetLight );
 
 			sun = new THREE.PointLight( 0xffffff, 1 );
 			sun.position.set( 30000,30000,30000 );
@@ -74,7 +59,7 @@
 			//scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
 			terrain = new Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap);
 			terrain.init();
-			terrain.initTrees();
+			terrain.initTrees(20);
 			scene.add(terrain.mesh);
 			scene.add(terrain.trees.mesh);
 
@@ -82,20 +67,19 @@
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( windowWidth, windowHeight );
 			render_container.appendChild( renderer.domElement );
+
 			document.body.onkeydown = keydown;
 			render_container.onmousedown = mousemove;
-
 			
 
 		}
 		function animate(){
 			requestAnimationFrame( animate );
-
 			render();
-
-
 		}
+
 		let et=0;
+
 		function render(){
 			var dt = clock.getDelta();
 			godcam.anim(dt);
@@ -120,11 +104,8 @@
 			terrain.geom.attributes.color.needsUpdate = true;
 		}
 		function keydown(event){
-			//clearSelectionGraphic();
 			const {x, y, z} = godcam.keydown(event);
-			//selectedPoint.x=x;
-			//selectedPoint.y=y;
-			//drawSelectionGraphic();
+
 		}
 		function mousemove(event){
 			clearSelectionGraphic();
@@ -137,7 +118,6 @@
 			selectedPoint.y=y;
 			selectedPoint.z=z;
 			drawSelectionGraphic();
-			
 
 		}
 		init();
