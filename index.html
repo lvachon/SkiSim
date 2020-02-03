@@ -94,14 +94,16 @@
 			document.body.onkeydown = keydown;
 			render_container.onmousedown = mousemove;
 
-			for(let i=0;i<2000;i++){
-				tree = new Tree();
-				tree.mesh.position.x=Math.random()*meshWidth-meshWidth/2;
-				tree.mesh.position.y=Math.random()*meshDepth-meshDepth/2;
-				tree.mesh.position.z=heightmap[Math.round((tree.mesh.position.x/meshWidth+0.5)*worldWidth)+worldWidth*Math.round((tree.mesh.position.y/meshDepth+0.5)*worldDepth)];
-
-				scene.add(tree.mesh);
+			trees = new Tree();
+			for(let i=0;i<200000;i++){
+				const x = meshWidth * (Math.random()-0.5);
+				const y = meshDepth * (Math.random()-0.5);
+				const i = Math.round(worldWidth * (x/meshWidth + 0.5)) + worldWidth * Math.round(worldDepth * (y/meshDepth+0.5));
+				trees.offsets.push(x,y,heightmap[i]+10);
 			}
+			trees.init();
+			scene.add(trees.mesh);
+
 		}
 		function animate(){
 			requestAnimationFrame( animate );
