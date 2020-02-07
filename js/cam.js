@@ -42,17 +42,20 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 		this.targetLookZ = baseZ;
 		this.targetPosZ = baseZ + this.radius;
 		this.movementStarted = Date.now();
+		this.mouseX = 0;
+		this.mouseY = 0;
 	}
 
 	this.anim = (dt)=>{
 		const dx = this.camera.position.x - this.targetPosX;
 		const dy = this.camera.position.y - this.targetPosY;
 		const dz = this.camera.position.z - this.targetPosZ;
+		const dtt = (Date.now() - this.movementStarted)/1000.0;
 		const dyaw = this.yaw - this.targetYaw;
-		this.camera.position.x -= dx*Math.min(1.0,dt);
-		this.camera.position.y -= dy*Math.min(1.0,dt);
-		this.camera.position.z -= dz*Math.min(1.0,dt);
-		this.yaw -= dyaw*Math.min(1.0,dt);
+		this.camera.position.x -= dx*Math.min(1.0,dtt);
+		this.camera.position.y -= dy*Math.min(1.0,dtt);
+		this.camera.position.z -= dz*Math.min(1.0,dtt);
+		this.yaw -= dyaw*Math.min(1.0,dtt);
 		this.camera.lookAt(this.camera.position.x-this.radius*Math.cos(this.yaw), this.camera.position.y-this.radius*Math.sin(this.yaw), this.camera.position.z-this.radius);
 
 	}
@@ -92,10 +95,10 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 		}
 		return {x:this.targetX, y:this.targetY, z:this.targetZ }
 	}
-	this.mousemove = (event, terrainM)=>{
+	this.mousemove = (terrainM)=>{
 		const mouse = {
-			x:(event.offsetX / this.windowWidth)*2 -1,
-			y:-1 * (event.offsetY / this.windowHeight)*2 +1
+			x:(this.mouseX / this.windowWidth)*2 -1,
+			y:-1 * (this.mouseY / this.windowHeight)*2 +1
 		};
 		this.raycaster.setFromCamera(mouse, this.camera);
 		

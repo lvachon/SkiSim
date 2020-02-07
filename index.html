@@ -4,12 +4,53 @@
 		<script src='js/terrain.js'></script>
 		<script src='js/cam.js'></script>
 		<script src='js/tree.js'></script>
+		<script src='js/agent.js'></script>
+		<script src='js/tasks.js'></script>
 		<script src='img/washington.js'></script>
 		<title>Ski Resort Sim</title>
+		<!-- NOTES:
+			Skiier motion ideas: 
+				lateral motion: A * sin( R * t) * a * sin( r * t ) 
+					Each rider has a two waves, a small period medium amplitude wave that is the "carving" we all do,
+					and a large period large amplitude wave that is the "wandering" we all do.
+					Each skiier has different periods and amplitudes for each.
+					Beginners would be high values for all params, slow hairpin turns, meandering down the mountain with no real direction
+					Intermediates would be medium values, medium speed S turns, only a handfull of oscillations between trail sides
+					Advanced would have low values for all, quick shallow turns in a generally straight line down the mountain.
+					Shussing would be 0 for all values, straight down the mountain AFAP.
+				routing:
+					initial idea:
+						blind navigation based on the above, counting trees and above tier trails as obstacles
+						lateral motion should be a function of vertical descent
+						vertical descent should be positive (like always going downhill, no traverses or climbs)
+						if route doesn't allow this, they get stuck, starve|freeze and die, lol
+						no skiier-skiier crashes...yet, or maybe only have a chance of a crash in any given collision
+			Terraforming:
+				Step 0:  Base area, click with mouse to define first base area, access-rd from nearest edge is added automagically
+					--Need to allow enough space to build parking
+					--Not too big that it interferes with trails, but eventually bridges could solve that
+				Step 1: Clear base area
+				Step 2: Build trail maint fac
+				Steps N: Cut lift trail, build lift, cut ski trail(s)
+				Steps N+: Build ticket booth (opt: others)
+					Build snowmaking system, assign snowmaking routine
+					Assign grooming schedule
+					
+
+
+		-->
+
 	</head>
 	<body>
 		<div id='render_container'></div>
-		<div id='stats'></div>
+		<div id='controls'>
+			<button onclick='setToolMode("CLEARCUT");'>Clearcut</button>
+			<button onclick='setToolMode("ADDWORKER");'>Add Worker</button>
+		</div>
+		<div id='stats'>
+			<div id='cash'>1000000</div>
+			<div id='workers'>0</div>
+		</div>
 	</body>
 	<script>
 		let camera = null;
@@ -17,7 +58,8 @@
 		let scene = null;
 		let godcam = null;
 		let sun = null;
-
+		let workers = [];
+		let tm = null;
 		let renderer = null;
 
 		const gridWidth=128;
@@ -57,11 +99,13 @@
 			scene.add( sun );
 
 			//scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
-			terrain = new Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap);
+			terrain = new Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap, maxHeight);
 			terrain.init();
 			terrain.initTrees(20);
 			scene.add(terrain.mesh);
 			scene.add(terrain.trees.mesh);
+
+			tm = new Tasks(terrain, workers);
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
@@ -69,7 +113,9 @@
 			render_container.appendChild( renderer.domElement );
 
 			document.body.onkeydown = keydown;
-			render_container.onmousedown = mousemove;
+			render_container.onmousedown = mousedown;
+			render_container.onmousemove = mousemove;
+			render_container.oncontextmenu = (event)=>{event.preventDefault();return false;};
 			
 
 		}
@@ -83,46 +129,45 @@
 		function render(){
 			var dt = clock.getDelta();
 			godcam.anim(dt);
+			workers.forEach(worker=>{worker.step(dt)});
 			renderer.render(scene, camera);
+			tm.processQueue();
+			const {x, y, z} = godcam.mousemove(terrain.mesh);
+			terrain.setSelectedPoint(x,y,z);
 		}
 
-
-		function clearSelectionGraphic(){
-			if(selectedPoint.x <0 || selectedPoint.y <0){return;}
-			const oi = 3*(selectedPoint.x+gridWidth*selectedPoint.y);
-			terrain.geom.attributes.color.array[oi]=selectedPoint.z/maxHeight;
-			terrain.geom.attributes.color.array[oi+1]=0.5 + 0.5*selectedPoint.z/maxHeight;
-			terrain.geom.attributes.color.array[oi+2]=selectedPoint.z/maxHeight;
-			terrain.geom.attributes.color.needsUpdate = true;
-		}
-		function drawSelectionGraphic(){
-			if(selectedPoint.x <0 || selectedPoint.y <0){return;}
-			const i = 3*(selectedPoint.x+gridWidth*selectedPoint.y);
-			terrain.geom.attributes.color.array[i]=1;
-			terrain.geom.attributes.color.array[i+1]=0;
-			terrain.geom.attributes.color.array[i+2]=0;
-			terrain.geom.attributes.color.needsUpdate = true;
-		}
 		function keydown(event){
 			const {x, y, z} = godcam.keydown(event);
-
 		}
 		function mousemove(event){
-			clearSelectionGraphic();
-			const {x, y, z} = godcam.mousemove(event, terrain.mesh);
+			godcam.mouseX = event.offsetX;
+			godcam.mouseY = event.offsetY;
+		}
+		function mousedown(event){
+			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			if(x<0||y<0||z<0){
-				drawSelectionGraphic();
 				return;
 			}
-			selectedPoint.x=x;
-			selectedPoint.y=y;
-			selectedPoint.z=z;
-			drawSelectionGraphic();
+			if(toolMode=='ADDWORKER'){
+				const newWorker = new Agent(x+0.5,y+0.5,terrain);
+				workers.push(newWorker);
+				scene.add(newWorker.mesh);
+				event.preventDefault();
+				return false;
+			}
+			if(toolMode=='CLEARCUT'){
+				tm.addTask(x,y,'CLEARCUT');
+			}			
+			terrain.setSelectedPoint(x,y,z);
 
+		}
+		function setToolMode(mode){
+			toolMode = mode;
 		}
 		init();
 		animate();
 	</script>
 </html>	
+
 
 
