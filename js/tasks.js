@@ -5,6 +5,7 @@ function Tasks(terrain, workers){
 	this.addTask = (x,y,task)=>{
 		if(x<0||x>=this.terrain.gridWidth||y<0||y>this.terrain.gridDepth){return false;}
 		this.tasks.push({x,y,task});
+		this.terrain.addWorkingPoint(x, y);
 		return true;
 	}
 

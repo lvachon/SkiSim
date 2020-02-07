@@ -105,7 +105,10 @@ function Agent(gridX,gridY,terrain){
 		switch(this.currentTask.task){
 			case 'CLEARCUT':
 				const done = this.terrain.trimTrees(this.currentTask.x, this.currentTask.y, dt);
-				if(done){this.currentState='IDLE';}
+				if(done){
+					this.currentState='IDLE';
+					this.terrain.clearWorkingPoint(this.currentTask.x, this.currentTask.y);
+				}
 				break;
 		}
 	}

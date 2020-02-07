@@ -17,6 +17,7 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	this.maxHeight = maxHeight;
 	this.trees = null;
 	this.selectedPoint = {x:-1, y:-1};
+	this.workingPoints = [];
 
 	this.init = ()=>{
 		this.geom = new THREE.PlaneBufferGeometry( this.meshWidth, this.meshDepth, this.gridWidth - 1, this.gridDepth - 1 );
@@ -24,7 +25,9 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		this.tex = new THREE.TextureLoader().load('img/noise_grid.png');
 		this.tex.wrapS = THREE.RepeatWrapping;
 		this.tex.wrapT = THREE.RepeatWrapping;
-		this.tex.repeat.set( this.gridWidth/8, this.gridDepth/8 );
+		this.tex.repeat.set( (this.gridWidth-1)/8, (this.gridDepth-1)/8 );
+		this.tex.offset.x = 1/16;
+		this.tex.offset.y = 1/16;
 		this.mat = new THREE.MeshPhongMaterial({
 			map: this.tex, 
 			color:0xffffff, 
@@ -128,20 +131,52 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	this.clearSelectedPoint = ()=>{
 		if(this.selectedPoint.x <0 || this.selectedPoint.y <0){return;}
 		const oi = 3*(this.selectedPoint.x+this.gridWidth*this.selectedPoint.y);
-		this.geom.attributes.color.array[oi]=this.selectedPoint.z/this.maxHeight;
-		this.geom.attributes.color.array[oi+1]=0.5 + 0.5*this.selectedPoint.z/this.maxHeight;
-		this.geom.attributes.color.array[oi+2]=this.selectedPoint.z/this.maxHeight;
+		if(this.workingPoints.filter(wp=>wp.x==this.selectedPoint.x&&wp.y==this.selectedPoint.y).length){
+			this.geom.attributes.color.array[oi]=0;
+			this.geom.attributes.color.array[oi+1]=0;
+			this.geom.attributes.color.array[oi+2]=1;
+		}else{
+			this.geom.attributes.color.array[oi]=this.selectedPoint.z/this.maxHeight;
+			this.geom.attributes.color.array[oi+1]=0.5 + 0.5*this.selectedPoint.z/this.maxHeight;
+			this.geom.attributes.color.array[oi+2]=this.selectedPoint.z/this.maxHeight;
+		}
 		this.geom.attributes.color.needsUpdate = true;
 	}
 
 	this.drawSelectedPoint = ()=>{
 		if(this.selectedPoint.x <0 || this.selectedPoint.y <0){return;}
 		const i = 3*(this.selectedPoint.x+this.gridWidth*this.selectedPoint.y);
-		this.geom.attributes.color.array[i]=1;
-		this.geom.attributes.color.array[i+1]=0;
-		this.geom.attributes.color.array[i+2]=0;
+		if(this.workingPoints.filter(wp=>wp.x==this.selectedPoint.x&&wp.y==this.selectedPoint.y).length){
+			this.geom.attributes.color.array[i]=1;
+			this.geom.attributes.color.array[i+1]=0;
+			this.geom.attributes.color.array[i+2]=1;
+		}else{
+			this.geom.attributes.color.array[i]=1;
+			this.geom.attributes.color.array[i+1]=0;
+			this.geom.attributes.color.array[i+2]=0;
+		}
 		this.geom.attributes.color.needsUpdate = true;
 	}
+
+	this.addWorkingPoint = (x,y)=>{
+		this.workingPoints.push({x,y});
+		const i = 3*(x+this.gridWidth*y);
+		this.geom.attributes.color.array[i]=0;
+		this.geom.attributes.color.array[i+1]=0;
+		this.geom.attributes.color.array[i+2]=1;
+		this.geom.attributes.color.needsUpdate = true;
+
+	}
+	this.clearWorkingPoint = (x,y)=>{
+		this.workingPoints = this.workingPoints.filter(wp=>wp.x!=x||wp.y!=y);
+		const i = 3*(x+this.gridWidth*y);
+		const z = this.iTerrain(x,y);
+		this.geom.attributes.color.array[i]=z/this.maxHeight;
+		this.geom.attributes.color.array[i+1]=0.5 + 0.5*z/this.maxHeight;
+		this.geom.attributes.color.array[i+2]=z/this.maxHeight;
+		this.geom.attributes.color.needsUpdate = true;
+	}
+
 
 }
 
