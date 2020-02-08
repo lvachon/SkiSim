@@ -84,8 +84,8 @@ function Agent(gridX,gridY,terrain){
 	}
 
 	this.doNav = (dt)=>{
-		const dx = this.currentTask.x+0.5 - this.gridX;
-		const dy = this.currentTask.y+0.5 - this.gridY;
+		const dx = this.currentTask.x - this.gridX;
+		const dy = this.currentTask.y - this.gridY;
 		if(Math.sqrt((dx*dx)+(dy*dy))<this.radius*(this.terrain.gridWidth/this.terrain.meshWidth)){
 			this.currentState='WORK';
 			return;

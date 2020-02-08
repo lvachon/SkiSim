@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<script src='js/three.min.js'></script>
+		<script src='obj/arrow.js'></script>
 		<script src='js/terrain.js'></script>
 		<script src='js/cam.js'></script>
 		<script src='js/tree.js'></script>
@@ -81,15 +82,7 @@
 		treemap = heightmap.map(x=>1-x/maxHeight);
 
 		function init() {
-			camera = new THREE.PerspectiveCamera( 60, windowWidth / windowHeight, 1, 50000 );
-			camera.position.z = 10000;
-			camera.position.y = 20000;
-			camera.up = new THREE.Vector3(0,0,1);
-			camera.lookAt(0,0,3000);
-			godcam = new GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, windowWidth, windowHeight );
-
 			clock = new THREE.Clock();
-			
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0x000000 );
 			scene.add( new THREE.AmbientLight( 0x444444 ) );
@@ -104,6 +97,10 @@
 			terrain.initTrees(20);
 			scene.add(terrain.mesh);
 			scene.add(terrain.trees.mesh);
+			scene.add(terrain.arrow.mesh);
+
+			godcam = new GodCam( terrain, windowWidth, windowHeight );
+
 
 			tm = new Tasks(terrain, workers);
 
@@ -113,6 +110,7 @@
 			render_container.appendChild( renderer.domElement );
 
 			document.body.onkeydown = keydown;
+			document.body.onkeyup = keyup;
 			render_container.onmousedown = mousedown;
 			render_container.onmousemove = mousemove;
 			render_container.oncontextmenu = (event)=>{event.preventDefault();return false;};
@@ -130,14 +128,17 @@
 			var dt = clock.getDelta();
 			godcam.anim(dt);
 			workers.forEach(worker=>{worker.step(dt)});
-			renderer.render(scene, camera);
+			renderer.render(scene, godcam.camera);
 			tm.processQueue();
 			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			terrain.setSelectedPoint(x,y,z);
 		}
 
 		function keydown(event){
-			const {x, y, z} = godcam.keydown(event);
+			godcam.keydown(event);
+		}
+		function keyup(event){
+			godcam.keyup(event);
 		}
 		function mousemove(event){
 			godcam.mouseX = event.offsetX;
@@ -149,7 +150,7 @@
 				return;
 			}
 			if(toolMode=='ADDWORKER'){
-				const newWorker = new Agent(x+0.5,y+0.5,terrain);
+				const newWorker = new Agent(x,y,terrain);
 				workers.push(newWorker);
 				scene.add(newWorker.mesh);
 				event.preventDefault();
@@ -168,6 +169,7 @@
 		animate();
 	</script>
 </html>	
+
 
 
 

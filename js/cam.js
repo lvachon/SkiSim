@@ -1,10 +1,7 @@
-function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, windowWidth, windowHeight ){
-	this.camera = camera;
-	this.gridWidth = gridWidth;
-	this.gridDepth = gridDepth;
-	this.meshWidth = meshWidth;
-	this.meshDepth = meshDepth;
-	this.heightmap = heightmap;
+function GodCam( terrain, windowWidth, windowHeight ){
+	this.camera = new THREE.PerspectiveCamera( 60, windowWidth / windowHeight, 1, 50000 );
+	this.camera.up = new THREE.Vector3(0,0,1);
+	this.terrain = terrain;
 	this.windowWidth = windowWidth;
 	this.windowHeight = windowHeight;
 	this.targetLookX = 0;
@@ -23,19 +20,29 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 	this.movementStarted = null;
 	this.movementTime = 1000;
 	this.raycaster = new THREE.Raycaster();
+	this.keyStates = {
+		w:false,
+		s:false,
+		a:false,
+		d:false,
+		q:false,
+		e:false,
+		z:false,
+		x:false
+	}
 	this.setTarget = (x, y)=>{
-		if(x>=this.gridWidth){x=this.gridWidth-1;}
+		if(x>=this.terrain.gridWidth){x=this.terrain.gridWidth-1;}
 		if(x<0){x=0;}
-		if(y>=this.gridDepth){y=this.gridDepth-1;}
+		if(y>=this.terrain.gridDepth){y=this.terrain.gridDepth-1;}
 		if(y<0){y=0;}
 
 		this.targetX=x;
 		this.targetY=y;
-		const baseZ = this.heightmap[x+y*this.gridWidth];
+		const baseZ = this.terrain.heightmap[x+y*this.terrain.gridWidth];
 		this.targetZ=baseZ;
 
-		this.targetLookX = x/this.gridWidth * this.meshWidth - this.meshWidth/2;
-		this.targetLookY = meshDepth - y/this.gridDepth * this.meshDepth - this.meshDepth/2;
+		this.targetLookX = x/this.terrain.gridWidth * this.terrain.meshWidth - this.terrain.meshWidth/2;
+		this.targetLookY = this.terrain.meshDepth - y/this.terrain.gridDepth * this.terrain.meshDepth - this.terrain.meshDepth/2;
 		this.targetPosX = this.targetLookX + this.radius * Math.cos(this.targetYaw);
 		this.targetPosY = this.targetLookY + this.radius * Math.sin(this.targetYaw);
 
@@ -58,42 +65,56 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 		this.yaw -= dyaw*Math.min(1.0,dtt);
 		this.camera.lookAt(this.camera.position.x-this.radius*Math.cos(this.yaw), this.camera.position.y-this.radius*Math.sin(this.yaw), this.camera.position.z-this.radius);
 
+
 	}
-	this.keydown = (event)=>{
-		switch(event.key){
-			case 'w':
-				this.setTarget(this.targetX-1*Math.cos(this.targetYaw), this.targetY+1*Math.sin(this.targetYaw));
-				break;
-			case 's':
-				this.setTarget(this.targetX+1*Math.cos(this.targetYaw), this.targetY-1*Math.sin(this.targetYaw));
-				break;
-			case 'a':
-				this.setTarget(this.targetX+1*Math.sin(this.targetYaw), this.targetY+1*Math.cos(this.targetYaw));
-				break;
-			case 'd':
-				this.setTarget(this.targetX-1*Math.sin(this.targetYaw), this.targetY-1*Math.cos(this.targetYaw));
-				break;
-			case 'x':
-				this.radius*=1.1;
-				this.setTarget(this.targetX, this.targetY);
-				break;
-			case 'z':
-				this.radius/=1.1;
-				this.setTarget(this.targetX, this.targetY);
-				break;
-			case 'q':
-				this.targetYaw+=Math.PI/2;
-				this.setTarget(this.targetX, this.targetY);
-				break;
-			case 'e':
-				this.targetYaw-=Math.PI/2;
-				this.setTarget(this.targetX, this.targetY);
-				break;
 
-
-				
+	this.doMovement = ()=>{
+		const newTarget={x:this.targetX, y:this.targetY};
+		let dirty=false;
+		if(this.keyStates.w) {
+			newTarget.x -= Math.cos(this.targetYaw);
+			newTarget.y += Math.sin(this.targetYaw);
 		}
-		return {x:this.targetX, y:this.targetY, z:this.targetZ }
+		if(this.keyStates.s) {
+			newTarget.x += Math.cos(this.targetYaw);
+			newTarget.y -= Math.sin(this.targetYaw);
+		}
+		if(this.keyStates.a) {
+			newTarget.x += Math.sin(this.targetYaw);
+			newTarget.y += Math.cos(this.targetYaw);
+		}
+		if(this.keyStates.d) {
+			newTarget.x -= Math.sin(this.targetYaw);
+			newTarget.y -= Math.cos(this.targetYaw);
+		}
+		if(this.keyStates.x) {
+			dirty=true;
+			this.radius *= 1.1;
+		}
+		if(this.keyStates.z) {
+			dirty=true;
+			this.radius /= 1.1;
+		}
+		if(this.keyStates.q) {
+			dirty=true;
+			this.targetYaw+=Math.PI/2;
+		}
+		if(this.keyStates.e) {
+			dirty=true;
+			this.targetYaw-=Math.PI/2;
+		}
+		if(this.targetX!=newTarget.x || this.targetY!=newTarget.y || dirty) {
+			this.setTarget(newTarget.x, newTarget.y);
+		}
+		setTimeout(this.doMovement,90);
+	}
+
+	this.keydown = (event)=>{
+		this.keyStates[event.key]=true;
+	}
+
+	this.keyup = (event)=>{
+		this.keyStates[event.key]=false;
 	}
 	this.mousemove = (terrainM)=>{
 		const mouse = {
@@ -102,11 +123,11 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 		};
 		this.raycaster.setFromCamera(mouse, this.camera);
 		
-		var hits = this.raycaster.intersectObject(terrainM);
+		const hits = this.raycaster.intersectObject(terrainM);
 		if(hits.length){
 			return {
-				x: Math.round(this.gridWidth * (hits[0].point.x/this.meshWidth+0.5)),
-				y: -1 * Math.round(this.gridDepth * (hits[0].point.y/this.meshDepth-0.5)),
+				x: (this.terrain.gridWidth * (hits[0].point.x/this.terrain.meshWidth+0.5)),
+				y: -1 * (this.terrain.gridDepth * (hits[0].point.y/this.terrain.meshDepth-0.5)),
 				z: hits[0].point.z
 			}
 		}
@@ -114,5 +135,6 @@ function GodCam(camera, gridWidth, gridDepth, heightmap, meshWidth, meshDepth, w
 
 	}
 
-	this.setTarget(gridWidth/2, this.gridDepth/2);
+	this.setTarget(this.terrain.gridWidth/2, this.terrain.gridDepth/2);
+	this.doMovement();
 }
