@@ -59,15 +59,15 @@ function Agent(gridX,gridY,terrain){
 		return new THREE.Vector3(
 			this.terrain.meshWidth*this.gridX/this.terrain.gridWidth-this.terrain.meshWidth/2,
 			this.terrain.meshDepth*(this.terrain.gridDepth-this.gridY)/this.terrain.gridDepth-this.terrain.meshDepth/2,
-			this.terrain.iTerrain(this.gridX,this.gridY)+this.radius
+			this.terrain.iTerrain(this.gridX-0.5,this.gridY-0.5)+this.radius
 		);
-	}
+	};
 
 
 	this.assignTask = (task)=>{
 		this.currentTask = task;
 		this.currentState = 'NAV';
-	}
+	};
 
 	this.step = (dt)=>{
 		switch (this.currentState){
@@ -79,11 +79,10 @@ function Agent(gridX,gridY,terrain){
 				break;
 			case 'IDLE':
 				CASH-=dt;
-			default:
 				break;
 
 		}
-	}
+	};
 
 	this.doNav = (dt)=>{
 		const dx = this.currentTask.x - this.gridX;
@@ -102,7 +101,7 @@ function Agent(gridX,gridY,terrain){
 		this.mesh.position.y = pos.y;
 		this.mesh.position.z = pos.z;
 		CASH-=dt*10;
-	}
+	};
 
 	this.doWork = (dt)=>{
 		switch(this.currentTask.task){
@@ -117,7 +116,7 @@ function Agent(gridX,gridY,terrain){
 				}
 				break;
 		}
-	}
+	};
 
 
 	this.geom = new THREE.BufferGeometry();
