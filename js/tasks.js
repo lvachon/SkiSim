@@ -61,6 +61,7 @@ function Tasks(terrain, workers){
 		this.tasks = JSON.parse(localStorage.getItem(`${slot}_tasks_tasks`));
 		this.workers = JSON.parse(localStorage.getItem(`${slot}_tasks_workers`)).map(worker=>{
 			const agent = new Agent(worker.gridX, worker.gridY, this.terrain);
+			agent.name = worker.name;
 			agent.currentTask = worker.currentTask;
 			agent.currentState = worker.currentState;
 			scene.add(agent.mesh);
