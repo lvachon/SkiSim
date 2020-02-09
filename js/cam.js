@@ -10,9 +10,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 	this.lookPosX=0;
 	this.lookPosY=0;
 	this.lookPosZ=0;
-	this.targetPosX = 0;
-	this.targetPosY = 0;
-	this.targetPosZ = 0;
+
 	this.targetX = 0;
 	this.targetY = 0;
 	this.targetZ = 0;
@@ -20,6 +18,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 	this.yaw = -1*Math.PI/2;
 	this.targetYaw = this.yaw;
 	this.radius = 2000;
+	this.targetRadius = 2000;
 	this.movementStarted = null;
 	this.movementTime = 1000;
 	this.raycaster = new THREE.Raycaster();
@@ -54,12 +53,13 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		const dx = this.lookPosX - this.targetLookX;
 		const dy = this.lookPosY - this.targetLookY;
 		const dz = this.lookPosZ - this.targetLookZ;
-		const dtt = Math.min(1.0,(Date.now() - this.movementStarted)/1000.0);
+		const dtt = Math.min(1.0,(Date.now() - this.movementStarted)/this.movementTime);
 		const dyaw = this.yaw - this.targetYaw;
 		this.lookPosX -= dx*dtt;
 		this.lookPosY -= dy*dtt;
 		this.lookPosZ -= dz*dtt;
 		this.yaw -= dyaw*dtt;
+		this.radius -= (this.radius-this.targetRadius)*dtt;
 		this.camera.position.x = this.lookPosX + this.radius * Math.cos(this.yaw);
 		this.camera.position.y = this.lookPosY + this.radius * Math.sin(this.yaw);
 		this.camera.position.z = this.lookPosZ + this.radius * 0.5 ;
@@ -89,19 +89,19 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		}
 		if(this.keyStates.x) {
 			dirty=true;
-			this.radius *= 1.1;
+			this.targetRadius *= 1.1;
 		}
 		if(this.keyStates.z) {
 			dirty=true;
-			this.radius /= 1.1;
+			this.targetRadius /= 1.1;
 		}
 		if(this.keyStates.q) {
 			dirty=true;
-			this.targetYaw+=Math.PI/2;
+			this.targetYaw+=Math.PI/8;
 		}
 		if(this.keyStates.e) {
 			dirty=true;
-			this.targetYaw-=Math.PI/2;
+			this.targetYaw-=Math.PI/8;
 		}
 		if(this.targetX!=newTarget.x || this.targetY!=newTarget.y || dirty) {
 			this.setTarget(newTarget.x, newTarget.y);
