@@ -10,6 +10,7 @@ function Agent(gridX,gridY,terrain){
 	this.maxVel=1;
 	this.radius=10;
 	this.terrain=terrain;
+	this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
 	
 	this.verts = [
 		0, 0, -1, 
@@ -77,6 +78,7 @@ function Agent(gridX,gridY,terrain){
 				this.doWork(dt);
 				break;
 			case 'IDLE':
+				CASH-=dt;
 			default:
 				break;
 
@@ -99,15 +101,19 @@ function Agent(gridX,gridY,terrain){
 		this.mesh.position.x = pos.x;
 		this.mesh.position.y = pos.y;
 		this.mesh.position.z = pos.z;
+		CASH-=dt*10;
 	}
 
 	this.doWork = (dt)=>{
 		switch(this.currentTask.task){
 			case 'CLEARCUT':
 				const done = this.terrain.trimTrees(this.currentTask.x, this.currentTask.y, dt);
+				CASH-=dt*100;
 				if(done){
 					this.currentState='IDLE';
 					this.terrain.clearWorkingPoint(this.currentTask.x, this.currentTask.y);
+					this.currentTask={x:-1,y:-1,task:"None"};
+
 				}
 				break;
 		}

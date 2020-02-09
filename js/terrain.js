@@ -169,6 +169,17 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		this.geom.attributes.color.needsUpdate = true;
 	}
 
+	this.save = (slot)=>{
+		localStorage.setItem(`${slot}_terrain_trees`,JSON.stringify(this.treemap));
+		localStorage.setItem(`${slot}_terrain_workingPoints`,JSON.stringify(this.workingPoints));
+	}
+	this.load = (slot)=>{
+		this.treemap = JSON.parse(localStorage.getItem(`${slot}_terrain_trees`));
+		this.workingPoints = [];
+		JSON.parse(localStorage.getItem(`${slot}_terrain_workingPoints`)).forEach(wp=>{this.addWorkingPoint(wp.x,wp.y)});
+		this.refreshTrees();
+	}
+
 
 }
 

@@ -5,9 +5,11 @@
 		<script src='js/terrain.js'></script>
 		<script src='js/cam.js'></script>
 		<script src='js/tree.js'></script>
+		<script src="js/names.js"></script>
 		<script src='js/agent.js'></script>
 		<script src='js/tasks.js'></script>
 		<script src='img/washington.js'></script>
+
 		<title>Ski Resort Sim</title>
 		<!-- NOTES:
 			Skiier motion ideas: 
@@ -40,17 +42,74 @@
 
 
 		-->
+	<style>
+		button {
+			width:6em;
+			height:6em;
+			border-radius:1em;
+			margin-right:0.5em;
+			margin-left:0.5em;
+		}
+		button.active {
+			border: inset;
+			background:#80A080
+		}
+		button:focus {
+			outline:none;
+		}
+		#controls {
+			background:#202020;
+			display:flex;
+			width:620px;
+			height:7em;
+			align-items:center;
+			justify-content:center;
+			margin-top:0.5em;
+			float:left;
+		}
+		#stats {
+			background:#202020;
+			width:620px;
+			height:7em;
+			margin-top:0.5em;
+			float:left;
+		}
+		#workers_ui {
+			background:#808080;
+			width:310px;
+			border:solid 1px;
+		}
+		#workers_ui thead {
+			font-weight:bold;
+		}
 
+		#workers_ui tr td {
+			background:#EEEEEE;
+			width:8em;
+			text-align:center;
+		}
+
+		#cash_ui {
+			background:#808080;
+			width:155px;
+			border:solid 1px;
+			color:#204020;
+		}
+	</style>
 	</head>
 	<body>
 		<div id='render_container'></div>
 		<div id='controls'>
-			<button onclick='setToolMode("CLEARCUT");'>Clearcut</button>
-			<button onclick='setToolMode("ADDWORKER");'>Add Worker</button>
+			<button onclick='setToolMode("NONE");' rel="NONE">None</button>
+			<button onclick='setToolMode("CLEARCUT");' rel="CLEARCUT">Cut Trees</button>
+			<button onclick='setToolMode("ADDWORKER");' rel="ADDWORKER">Add Worker</button>
+			<button onclick='saveGame(prompt("Savegame name:"))' >Save</button>
+			<button onclick='loadGame(prompt("Savegame name:"));' >Load</button>
 		</div>
 		<div id='stats'>
-			<div id='cash'>1000000</div>
-			<div id='workers'>0</div>
+			<div id='cash_ui'>1000000</div>
+			<table id='workers_ui'></table>
+			<div id="tasks_ui"></div>
 		</div>
 	</body>
 	<script>
@@ -62,7 +121,7 @@
 		let workers = [];
 		let tm = null;
 		let renderer = null;
-
+		let CASH=10000000;
 		const gridWidth=128;
 		const gridDepth=128;
 		const halfWW = gridWidth/2;
@@ -74,6 +133,7 @@
 		const meshWidth = 26624;
 		const meshDepth = 26624;
 		const maxHeight = 3000;
+		let toolMode = "";
 
 		const selectedPoint = {x:0, y:0}
 
@@ -127,11 +187,15 @@
 		function render(){
 			var dt = clock.getDelta();
 			godcam.anim(dt);
-			workers.forEach(worker=>{worker.step(dt)});
+			tm.workers.forEach(worker=>{worker.step(dt)});
 			renderer.render(scene, godcam.camera);
 			tm.processQueue();
 			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			terrain.setSelectedPoint(x,y,z);
+			cash_ui.innerHTML=`Cash: \$${Math.floor(CASH*100)/100}`;
+
+			workers_ui.innerHTML = tm.getWorkerTable();
+
 		}
 
 		function keydown(event){
@@ -151,6 +215,7 @@
 			}
 			if(toolMode=='ADDWORKER'){
 				const newWorker = new Agent(x,y,terrain);
+				CASH-=500;
 				workers.push(newWorker);
 				scene.add(newWorker.mesh);
 				event.preventDefault();
@@ -164,6 +229,18 @@
 		}
 		function setToolMode(mode){
 			toolMode = mode;
+			Array.from(document.getElementsByTagName("button")).forEach(elem=>{elem.classList.remove("active");});
+			Array.from(document.getElementsByTagName("button")).filter(elem=>elem.attributes.rel&&elem.attributes.rel.value==mode)[0].classList.add("active");
+		}
+		function saveGame(slot){
+			localStorage.setItem(`${slot}_cash`,CASH);
+			tm.save(slot);
+			terrain.save(slot);
+		}
+		function loadGame(slot){
+			CASH = localStorage.getItem(`${slot}_cash`);
+			tm.load(slot);
+			terrain.load(slot);
 		}
 		init();
 		animate();
