@@ -7,6 +7,9 @@ function GodCam( terrain, windowWidth, windowHeight ){
 	this.targetLookX = 0;
 	this.targetLookY = 0;
 	this.targetLookZ = 0;
+	this.lookPosX=0;
+	this.lookPosY=0;
+	this.lookPosZ=0;
 	this.targetPosX = 0;
 	this.targetPosY = 0;
 	this.targetPosZ = 0;
@@ -38,32 +41,29 @@ function GodCam( terrain, windowWidth, windowHeight ){
 
 		this.targetX=x;
 		this.targetY=y;
-		const baseZ = this.terrain.heightmap[x+y*this.terrain.gridWidth];
-		this.targetZ=baseZ;
 
 		this.targetLookX = x/this.terrain.gridWidth * this.terrain.meshWidth - this.terrain.meshWidth/2;
-		this.targetLookY = this.terrain.meshDepth - y/this.terrain.gridDepth * this.terrain.meshDepth - this.terrain.meshDepth/2;
-		this.targetPosX = this.targetLookX + this.radius * Math.cos(this.targetYaw);
-		this.targetPosY = this.targetLookY + this.radius * Math.sin(this.targetYaw);
+		this.targetLookY = this.terrain.meshDepth * ((this.terrain.gridDepth-y)/this.terrain.gridDepth  - 0.5);
+		this.targetLookZ = this.terrain.iTerrain(x,y);
 
-		this.targetLookZ = baseZ;
-		this.targetPosZ = baseZ + this.radius;
 		this.movementStarted = Date.now();
-		this.mouseX = 0;
-		this.mouseY = 0;
+
 	}
 
 	this.anim = (dt)=>{
-		const dx = this.camera.position.x - this.targetPosX;
-		const dy = this.camera.position.y - this.targetPosY;
-		const dz = this.camera.position.z - this.targetPosZ;
-		const dtt = (Date.now() - this.movementStarted)/1000.0;
+		const dx = this.lookPosX - this.targetLookX;
+		const dy = this.lookPosY - this.targetLookY;
+		const dz = this.lookPosZ - this.targetLookZ;
+		const dtt = Math.min(1.0,(Date.now() - this.movementStarted)/1000.0);
 		const dyaw = this.yaw - this.targetYaw;
-		this.camera.position.x -= dx*Math.min(1.0,dtt);
-		this.camera.position.y -= dy*Math.min(1.0,dtt);
-		this.camera.position.z -= dz*Math.min(1.0,dtt);
-		this.yaw -= dyaw*Math.min(1.0,dtt);
-		this.camera.lookAt(this.camera.position.x-this.radius*Math.cos(this.yaw), this.camera.position.y-this.radius*Math.sin(this.yaw), this.camera.position.z-this.radius);
+		this.lookPosX -= dx*dtt;
+		this.lookPosY -= dy*dtt;
+		this.lookPosZ -= dz*dtt;
+		this.yaw -= dyaw*dtt;
+		this.camera.position.x = this.lookPosX + this.radius * Math.cos(this.yaw);
+		this.camera.position.y = this.lookPosY + this.radius * Math.sin(this.yaw);
+		this.camera.position.z = this.lookPosZ + this.radius * 0.5 ;
+		this.camera.lookAt(this.lookPosX, this.lookPosY, this.lookPosZ);
 
 
 	}

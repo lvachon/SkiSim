@@ -68,10 +68,10 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 			let rand = mulberry32(i);
 			for(let j=1;j<maxPerAcre*this.treemap[i];j++){
 				const x = (i%this.gridWidth)+rand();
-				const y = this.gridDepth - (Math.floor(i/this.gridWidth)+rand());
-				const px = this.meshWidth * ((x/this.gridWidth)-0.5);
-				const py = this.meshDepth * ((y/this.gridDepth)-0.5);
-				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y+0.5)+10);
+				const y =  (Math.floor(i/this.gridWidth)+rand());
+				const px = this.meshWidth * (x/this.gridWidth-0.5);
+				const py = this.meshDepth * ((this.gridDepth - y)/this.gridDepth-0.5);
+				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y-0.5)+10);
 			}
 		}
 		this.trees.init();
@@ -83,10 +83,10 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 			let rand = mulberry32(i);
 			for(let j=1;j<this.maxPerAcre*this.treemap[i];j++){
 				const x = (i%this.gridWidth)+rand();
-				const y = this.gridDepth - (Math.floor(i/this.gridWidth)+rand());
-				const px = this.meshWidth * ((x/this.gridWidth)-0.5);
-				const py = this.meshDepth * ((y/this.gridDepth)-0.5);
-				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y+0.5)+10);
+				const y =  (Math.floor(i/this.gridWidth)+rand());
+				const px = this.meshWidth * (x/this.gridWidth-0.5);
+				const py = this.meshDepth * ((this.gridDepth - y)/this.gridDepth-0.5);
+				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y-0.5)+10);
 			}
 		}
 		this.trees.geom.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(this.trees.offsets),3));
@@ -104,7 +104,7 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	}
 
 	this.iTerrain = (x, y) => {
-		y=this.gridDepth-y;
+		//y=this.gridDepth-y;
 		let x1 = Math.floor(x);
 		let x2 = x1+1;
 		let y1 = Math.floor(y);

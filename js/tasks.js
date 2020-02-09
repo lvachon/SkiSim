@@ -36,7 +36,11 @@ function Tasks(terrain, workers){
 										<td>${worker.name}</td>
 										<td>${worker.currentState}</td>
 										<td>${worker.currentTask?worker.currentTask.task:'None'}</td>
-										<td>${Math.floor(worker.gridX*10)/10},${Math.floor(worker.gridY*10)/10}</td>
+										<td>
+											<a href='#' onmouseup="godcam.setTarget(${worker.gridX},${worker.gridY});">
+												${Math.floor(worker.gridX*10)/10},${Math.floor(worker.gridY*10)/10}
+											</a>
+										</td>
 									</tr>`;
 						}).join("") }
 					</tbody>

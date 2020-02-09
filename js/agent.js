@@ -59,7 +59,7 @@ function Agent(gridX,gridY,terrain){
 		return new THREE.Vector3(
 			this.terrain.meshWidth*this.gridX/this.terrain.gridWidth-this.terrain.meshWidth/2,
 			this.terrain.meshDepth*(this.terrain.gridDepth-this.gridY)/this.terrain.gridDepth-this.terrain.meshDepth/2,
-			this.terrain.iTerrain(this.gridX-0.5,this.terrain.gridDepth-this.gridY+0.5)+this.radius
+			this.terrain.iTerrain(this.gridX,this.gridY)+this.radius
 		);
 	}
 

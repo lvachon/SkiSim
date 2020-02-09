@@ -174,7 +174,7 @@
 			render_container.onmousedown = mousedown;
 			render_container.onmousemove = mousemove;
 			render_container.oncontextmenu = (event)=>{event.preventDefault();return false;};
-			
+			updateStats();
 
 		}
 		function animate(){
@@ -192,10 +192,12 @@
 			tm.processQueue();
 			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			terrain.setSelectedPoint(x,y,z);
+		}
+
+		function updateStats(){
 			cash_ui.innerHTML=`Cash: \$${Math.floor(CASH*100)/100}`;
-
 			workers_ui.innerHTML = tm.getWorkerTable();
-
+			setTimeout(this.updateStats,500);
 		}
 
 		function keydown(event){
