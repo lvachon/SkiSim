@@ -31,7 +31,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		e:false,
 		z:false,
 		x:false
-	}
+	};
 	this.setTarget = (x, y)=>{
 		if(x>=this.terrain.gridWidth){x=this.terrain.gridWidth-1;}
 		if(x<0){x=0;}
@@ -47,7 +47,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 
 		this.movementStarted = Date.now();
 
-	}
+	};
 
 	this.anim = (dt)=>{
 		const dx = this.lookPosX - this.targetLookX;
@@ -66,7 +66,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		this.camera.lookAt(this.lookPosX, this.lookPosY, this.lookPosZ);
 
 
-	}
+	};
 
 	this.doMovement = ()=>{
 		const newTarget={x:this.targetX, y:this.targetY};
@@ -103,19 +103,19 @@ function GodCam( terrain, windowWidth, windowHeight ){
 			dirty=true;
 			this.targetYaw-=Math.PI/8;
 		}
-		if(this.targetX!=newTarget.x || this.targetY!=newTarget.y || dirty) {
+		if(this.targetX!==newTarget.x || this.targetY!==newTarget.y || dirty) {
 			this.setTarget(newTarget.x, newTarget.y);
 		}
 		setTimeout(this.doMovement,90);
-	}
+	};
 
 	this.keydown = (event)=>{
 		this.keyStates[event.key]=true;
-	}
+	};
 
 	this.keyup = (event)=>{
 		this.keyStates[event.key]=false;
-	}
+	};
 	this.mousemove = (terrainM)=>{
 		const mouse = {
 			x:(this.mouseX / this.windowWidth)*2 -1,
@@ -133,7 +133,7 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		}
 		return {x:-1,y:-1,z:-1}
 
-	}
+	};
 
 	this.setTarget(this.terrain.gridWidth/2, this.terrain.gridDepth/2);
 	this.doMovement();
