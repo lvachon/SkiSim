@@ -234,7 +234,7 @@
 
 			if(toolMode==='BUILDLIFTTOP'){
 				if(!maybeLift){return false;}
-				const i = x+y*gridWidth;
+				const i = Math.floor(x)+Math.floor(y)*gridWidth;
 				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
 				CASH-=10000;
 				maybeLift.setEnd(x,y);
@@ -245,7 +245,7 @@
 			}
 
 			if(toolMode==='BUILDLIFTBASE'){
-				const i = x+y*gridWidth;
+				const i = Math.floor(x)+Math.floor(y)*gridWidth;
 				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
 				CASH-=10000;
 				maybeLift = new Lift(x,y,terrain);
