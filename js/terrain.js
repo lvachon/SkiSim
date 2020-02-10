@@ -32,18 +32,18 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		this.tex.offset.x = 1/16;
 		this.tex.offset.y = 1/16;
 		this.mat = new THREE.MeshPhongMaterial({
-			map: this.tex, 
-			color:0xffffff, 
-			shininess: 0, 
+			map: this.tex,
+			color:0xffffff,
+			shininess: 0,
 			specular: 0xffffff,
-			side:THREE.DoubleSide, 
+			side:THREE.DoubleSide,
 			vertexColors: THREE.VertexColors
 		});
 		this.mesh = new THREE.Mesh(this.geom, this.mat);
 
 		this.arrow = new Arrow();
 	}
-	
+
 
 	this.makeTerrain = (pgb, width, height, heightmap)=>{
 		const z = pgb.attributes.position.array;
@@ -74,6 +74,7 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 			}
 		}
 		this.trees.geom.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(this.trees.offsets),3));
+		this.trees.geom.maxInstancedCount=this.trees.offsets.length/3;
 	}
 
 	this.trimTrees = (x, y, dt)=>{
