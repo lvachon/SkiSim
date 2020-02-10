@@ -238,8 +238,10 @@
 				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
 				CASH-=10000;
 				maybeLift.setEnd(x,y);
+				CASH-=1000*maybeLift.towerCount;
 				scene.add(maybeLift.topHouse.mesh);
 				scene.add(maybeLift.towers.mesh);
+				scene.add(maybeLift.cable);
 				lifts.push(maybeLift);
 				setToolMode('NONE');
 			}
@@ -277,6 +279,7 @@
 				scene.add(newLift.baseHouse.mesh);
 				scene.add(newLift.topHouse.mesh);
 				scene.add(newLift.towers.mesh);
+				scene.add(newLift.cable);
 			});
 			tm.load(slot);
 			terrain.load(slot);
