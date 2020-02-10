@@ -2,12 +2,15 @@
 	<head>
 		<script src='js/three.min.js'></script>
 		<script src='obj/arrow.js'></script>
+		<script src='obj/lifthouse.js'></script>
+		<script src='obj/tower.js'></script>
+		<script src='obj/tree.js'></script>
 		<script src='js/terrain.js'></script>
 		<script src='js/cam.js'></script>
-		<script src='js/tree.js'></script>
 		<script src="js/names.js"></script>
 		<script src='js/agent.js'></script>
 		<script src='js/tasks.js'></script>
+		<script src='js/lift.js'></script>
 		<script src='img/washington.js'></script>
 
 		<title>Ski Resort Sim</title>
@@ -103,6 +106,8 @@
 			<button onclick='setToolMode("NONE");' rel="NONE">None</button>
 			<button onclick='setToolMode("CLEARCUT");' rel="CLEARCUT">Cut Trees</button>
 			<button onclick='setToolMode("ADDWORKER");' rel="ADDWORKER">Add Worker</button>
+			<button onclick='setToolMode("BUILDLIFTBASE");' rel="BUILDLIFTBASE">Build Lift Base</button>
+			<button onclick='setToolMode("BUILDLIFTTOP");' rel="BUILDLIFTTOP" disabled>Build Lift Top</button>
 			<button onclick='saveGame(prompt("Savegame name:"))' >Save</button>
 			<button onclick='loadGame(prompt("Savegame name:"));' >Load</button>
 		</div>
@@ -118,8 +123,9 @@
 		let scene = null;
 		let godcam = null;
 		let sun = null;
-		let workers = [];
 		let tm = null;
+		let lifts = [];
+		let maybeLift = null;
 		let renderer = null;
 		let CASH=10000000;
 		const gridWidth=128;
@@ -135,7 +141,6 @@
 		const maxHeight = 3000;
 		let toolMode = "";
 
-		const selectedPoint = {x:0, y:0}
 
 		let treemap = [];
 		heightmap = heightmap.map(x=>maxHeight*x/255.0);
@@ -154,7 +159,7 @@
 			//scene.fog = new THREE.FogExp2( 0xaaccff, 0.0007 );
 			terrain = new Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap, maxHeight);
 			terrain.init();
-			terrain.initTrees(20);
+			terrain.refreshTrees();
 			scene.add(terrain.mesh);
 			scene.add(terrain.trees.mesh);
 			scene.add(terrain.arrow.mesh);
@@ -162,7 +167,7 @@
 			godcam = new GodCam( terrain, windowWidth, windowHeight );
 
 
-			tm = new Tasks(terrain, workers);
+			tm = new Tasks(terrain, []);
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
@@ -215,17 +220,38 @@
 			if(x<0||y<0||z<0){
 				return;
 			}
-			if(toolMode=='ADDWORKER'){
+			if(toolMode==='ADDWORKER'){
 				const newWorker = new Agent(x,y,terrain);
 				CASH-=500;
-				workers.push(newWorker);
+				tm.workers.push(newWorker);
 				scene.add(newWorker.mesh);
 				event.preventDefault();
 				return false;
 			}
-			if(toolMode=='CLEARCUT'){
+			if(toolMode==='CLEARCUT'){
 				tm.addTask(x,y,'CLEARCUT');
-			}			
+			}
+
+			if(toolMode==='BUILDLIFTTOP'){
+				if(!maybeLift){return false;}
+				const i = x+y*gridWidth;
+				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
+				CASH-=10000;
+				maybeLift.setEnd(x,y);
+				scene.add(maybeLift.topHouse.mesh);
+				scene.add(maybeLift.towers.mesh);
+				lifts.push(maybeLift);
+				toolMode='None';
+			}
+
+			if(toolMode==='BUILDLIFTBASE'){
+				const i = x+y*gridWidth;
+				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
+				CASH-=10000;
+				maybeLift = new Lift(x,y,terrain);
+				scene.add(maybeLift.baseHouse.mesh);
+				setToolMode('BUILDLIFTTOP');
+			}
 			terrain.setSelectedPoint(x,y,z);
 
 		}
@@ -236,11 +262,22 @@
 		}
 		function saveGame(slot){
 			localStorage.setItem(`${slot}_cash`,CASH);
+			localStorage.setItem(`${slot}_lifts`, JSON.stringify(lifts.map(lift=>lift.save())));
 			tm.save(slot);
 			terrain.save(slot);
 		}
 		function loadGame(slot){
 			CASH = localStorage.getItem(`${slot}_cash`);
+			lifts = [];
+			JSON.parse(localStorage.getItem(`${slot}_lifts`)).forEach(lift=>{
+				const newLift = new Lift(lift.startX, lift.startY,terrain);
+				newLift.distancePerTower = lift.distancePerTower;
+				newLift.setEnd(lift.endX, lift.endY);
+				lifts.push(newLift);
+				scene.add(newLift.baseHouse.mesh);
+				scene.add(newLift.topHouse.mesh);
+				scene.add(newLift.towers.mesh);
+			});
 			tm.load(slot);
 			terrain.load(slot);
 		}

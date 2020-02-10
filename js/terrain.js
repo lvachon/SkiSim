@@ -15,10 +15,11 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	this.meshWidth = meshWidth;
 	this.meshDepth = meshDepth;
 	this.maxHeight = maxHeight;
-	this.trees = null;
+	this.trees = new Tree();
 	this.selectedPoint = {x:-1, y:-1};
 	this.workingPoints = [];
 	this.arrow = null;
+	this.maxPerAcre=20;
 
 	this.init = ()=>{
 
@@ -61,22 +62,6 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		pgb.computeVertexNormals();
 	}
 
-	this.initTrees = (maxPerAcre=5)=>{
-		this.maxPerAcre = maxPerAcre;
-		this.trees = new Tree();
-		for(let i=0;i<treemap.length;i++){
-			let rand = mulberry32(i);
-			for(let j=1;j<maxPerAcre*this.treemap[i];j++){
-				const x = (i%this.gridWidth)+rand();
-				const y =  (Math.floor(i/this.gridWidth)+rand());
-				const px = this.meshWidth * (x/this.gridWidth-0.5);
-				const py = this.meshDepth * ((this.gridDepth - y)/this.gridDepth-0.5);
-				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y-0.5)+10);
-			}
-		}
-		this.trees.init();
-	}
-
 	this.refreshTrees = ()=>{
 		this.trees.offsets=[];
 		for(let i=0;i<treemap.length;i++){
@@ -84,9 +69,8 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 			for(let j=1;j<this.maxPerAcre*this.treemap[i];j++){
 				const x = (i%this.gridWidth)+rand();
 				const y =  (Math.floor(i/this.gridWidth)+rand());
-				const px = this.meshWidth * (x/this.gridWidth-0.5);
-				const py = this.meshDepth * ((this.gridDepth - y)/this.gridDepth-0.5);
-				this.trees.offsets.push(px,py,this.iTerrain(x-0.5,y-0.5)+10);
+				const meshPoint = this.gridToMesh(x,y);
+				this.trees.offsets.push(meshPoint.x,meshPoint.y,meshPoint.z+10);
 			}
 		}
 		this.trees.geom.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(this.trees.offsets),3));
@@ -127,6 +111,14 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		return zN * (1-py)+zS*py;
 	}
 
+	this.gridToMesh = (x,y)=>{
+		return {
+			x:this.meshWidth * (x/this.gridWidth-0.5),
+			y:this.meshDepth * ((this.gridDepth-y)/this.gridDepth-0.5),
+			z:this.iTerrain(x-0.5,y-0.5)
+		};
+	}
+
 	this.setSelectedPoint = (x,y,z=0)=>{
 		if(x<0||x>this.gridWidth||y<0||y>this.gridDepth){return false;}
 		this.clearSelectedPoint();
@@ -140,9 +132,10 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 
 	this.drawSelectedPoint = ()=>{
 		if(this.selectedPoint.x <0 || this.selectedPoint.y <0){return;}
-		this.arrow.mesh.position.x = this.meshWidth * (this.selectedPoint.x/this.gridWidth-0.5);
-		this.arrow.mesh.position.y = this.meshDepth * ((this.gridDepth - this.selectedPoint.y)/this.gridDepth-0.5);
-		this.arrow.mesh.position.z = this.selectedPoint.z+125;
+		const meshPoint = this.gridToMesh(this.selectedPoint.x, this.selectedPoint.y);
+		this.arrow.mesh.position.x = meshPoint.x;
+		this.arrow.mesh.position.y = meshPoint.y;
+		this.arrow.mesh.position.z = meshPoint.z+125;
 		this.arrow.mesh.visible = true;
 	}
 

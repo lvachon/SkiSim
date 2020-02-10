@@ -40,10 +40,10 @@ function GodCam( terrain, windowWidth, windowHeight ){
 
 		this.targetX=x;
 		this.targetY=y;
-
-		this.targetLookX = x/this.terrain.gridWidth * this.terrain.meshWidth - this.terrain.meshWidth/2;
-		this.targetLookY = this.terrain.meshDepth * ((this.terrain.gridDepth-y)/this.terrain.gridDepth  - 0.5);
-		this.targetLookZ = this.terrain.iTerrain(x,y);
+		const meshPoint = this.terrain.gridToMesh(x,y);
+		this.targetLookX = meshPoint.x;//x/this.terrain.gridWidth * this.terrain.meshWidth - this.terrain.meshWidth/2;
+		this.targetLookY = meshPoint.y;//this.terrain.meshDepth * ((this.terrain.gridDepth-y)/this.terrain.gridDepth  - 0.5);
+		this.targetLookZ = meshPoint.z;//this.terrain.iTerrain(x,y);
 
 		this.movementStarted = Date.now();
 
