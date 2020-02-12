@@ -9,6 +9,7 @@
 		<script src='js/cam.js'></script>
 		<script src="js/names.js"></script>
 		<script src='js/agent.js'></script>
+		<script src='js/rider.js'></script>
 		<script src='js/tasks.js'></script>
 		<script src='js/lift.js'></script>
 		<script src='img/washington.js'></script>
@@ -47,8 +48,8 @@
 		-->
 	<style>
 		button {
-			width:6em;
-			height:6em;
+			width:4em;
+			height:4em;
 			border-radius:1em;
 			margin-right:0.5em;
 			margin-left:0.5em;
@@ -106,6 +107,7 @@
 			<button onclick='setToolMode("NONE");' rel="NONE">None</button>
 			<button onclick='setToolMode("CLEARCUT");' rel="CLEARCUT">Cut Trees</button>
 			<button onclick='setToolMode("ADDWORKER");' rel="ADDWORKER">Add Worker</button>
+			<button onclick='setToolMode("ADDRIDER");' rel="ADDRIDER">Add Rider</button>
 			<button onclick='setToolMode("BUILDLIFTBASE");' rel="BUILDLIFTBASE">Build Lift Base</button>
 			<button onclick='setToolMode("BUILDLIFTTOP");' rel="BUILDLIFTTOP" disabled>Build Lift Top</button>
 			<button onclick='saveGame(prompt("Savegame name:"))' >Save</button>
@@ -125,6 +127,7 @@
 		let sun = null;
 		let tm = null;
 		let lifts = [];
+		let riders = [];
 		let maybeLift = null;
 		let renderer = null;
 		let CASH=10000000;
@@ -195,6 +198,9 @@
 			tm.workers.forEach(worker=>{worker.step(dt)});
 			renderer.render(scene, godcam.camera);
 			tm.processQueue();
+			riders.forEach(rider=>{
+				rider.step(dt);
+			});
 			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			terrain.setSelectedPoint(x,y,z);
 		}
@@ -225,6 +231,13 @@
 				CASH-=500;
 				tm.workers.push(newWorker);
 				scene.add(newWorker.mesh);
+				event.preventDefault();
+				return false;
+			}
+			if(toolMode==='ADDRIDER'){
+				const newRider = new Rider(x,y,terrain);
+				riders.push(newRider);
+				scene.add(newRider.mesh);
 				event.preventDefault();
 				return false;
 			}

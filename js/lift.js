@@ -9,6 +9,7 @@ function Lift(startX, startY, terrain){
     this.maxLength = 32;
     this.towers = new Tower();
     this.towerCount=0;
+    this.cableVel = 500;
     const cableG = new THREE.BufferGeometry();
     const cableM = new THREE.MeshPhongMaterial({
         side: THREE.DoubleSide,
@@ -113,9 +114,9 @@ function Lift(startX, startY, terrain){
             cableTris.push( a, b, c );
             cableTris.push( b, d, c );
         }
-
+        this.towers.offsets = offsets;
         this.towers.geom.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(offsets),3));
-        this.towerCount = offsets.length;
+        this.towerCount = offsets.length/3;
         this.towers.mesh.visible=true;
 
         this.cable.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cableVerts),3));
