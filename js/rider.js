@@ -7,7 +7,9 @@ function Rider(gridX,gridY,terrain){
     this.gridY=gridY;
     this.velX=0;
     this.velY=0;
+    this.velZ=0;
     this.maxVel=0.5;
+    this.maxRideVel=10;
     this.radius=10;
     this.terrain=terrain;
     this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
@@ -80,6 +82,7 @@ function Rider(gridX,gridY,terrain){
                 break;
             case 'LIFT':
                 this.doLift(dt);
+                break;
             case 'RIDE':
                 this.ride(dt);
                 break;
@@ -157,11 +160,15 @@ function Rider(gridX,gridY,terrain){
         const dz = towerPos.z - this.mesh.position.z;
         const d = Math.sqrt(dx*dx+dy*dy+dz*dz);
         if(d<this.radius){
-            console.log(towerPos,this.mesh.position,d);
             if(this.currentLiftTower < this.targetLift.towerCount) {
                 this.currentLiftTower++;
             }else{
                this.currentState = this.nextState[this.currentState];
+               this.gridX = this.targetLift.endX;
+               this.gridY = this.targetLift.endY;
+               this.velX=0;
+               this.velY=0;
+               this.currentTarget = {x:this.gridX, y:this.gridY, z:this.terrain.iTerrain(this.gridX,this.gridY)};
                return;
             }
         }
@@ -177,7 +184,54 @@ function Rider(gridX,gridY,terrain){
     };
 
     this.ride = (dt)=>{
+        let dx = this.currentTarget.x - this.gridX;
+        let dy = this.currentTarget.y - this.gridY;
+        let dz = (this.currentTarget.z - this.mesh.position.z)*this.terrain.gridWidth/this.terrain.meshWidth;
+        let d = Math.sqrt(dx*dx+dy*dy);
+        if(d<this.radius*this.terrain.gridWidth/this.terrain.meshWidth || this.mesh.position.z<this.currentTarget.z){
+            console.log("New target");
+            console.log(this.gridX,this.gridY,this.mesh.position.z);
+            //Find next target
+            let itersLeft = 100;
+            do {
+                const a = Math.random()*Math.PI*2;
+                this.currentTarget.x = this.gridX + Math.cos(a) ;
+                this.currentTarget.y = this.gridY + Math.sin(a);
+                this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x-0.5,this.currentTarget.y-0.5)+this.radius;
+                if(!itersLeft--){
+                    this.currentState='IDLE';
+                    return;
+                }
+            }while(
+                this.currentTarget.z>=this.mesh.position.z ||
+                this.terrain.treemap[Math.floor(this.currentTarget.x)+Math.floor(this.currentTarget.y)*terrain.gridWidth]>0.1
+            );
 
+            dx = this.currentTarget.x - this.gridX;
+            dy = this.currentTarget.y - this.gridY;
+            dz = (this.currentTarget.z - this.mesh.position.z)*this.terrain.gridWidth/this.terrain.meshWidth;
+            d = Math.sqrt(dx*dx+dy*dy);
+            this.targetVelX = this.maxRideVel * -1*dz/d * dx/d;
+            this.targetVelY = this.maxRideVel * -1*dz/d * dy/d;
+            console.log(this.currentTarget);
+            return;
+        }
+        this.velX += (this.targetVelX - this.velX)*0.05*dt;
+        this.velY += (this.targetVelY - this.velY)*0.05*dt;
+        if(Math.abs(dt*this.velX)>Math.abs(dx)){
+            this.gridX+=dx;
+        }else {
+            this.gridX += dt * this.velX;
+        }
+        if(Math.abs(dt*this.velY)>Math.abs(dy)){
+            this.gridY+=dy;
+        }else {
+            this.gridY += dt * this.velY;
+        }
+        const pos = this.meshPosition();
+        this.mesh.position.x = pos.x;
+        this.mesh.position.y = pos.y;
+        this.mesh.position.z = pos.z;
     };
 
 
