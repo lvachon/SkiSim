@@ -278,11 +278,14 @@
 		function saveGame(slot){
 			localStorage.setItem(`${slot}_cash`,CASH);
 			localStorage.setItem(`${slot}_lifts`, JSON.stringify(lifts.map(lift=>lift.save())));
+			localStorage.setItem(`${slot}_riders`, JSON.stringify(riders.map(lift=>lift.save())));
 			tm.save(slot);
 			terrain.save(slot);
 		}
 		function loadGame(slot){
 			CASH = localStorage.getItem(`${slot}_cash`);
+			tm.load(slot);
+			terrain.load(slot);
 			lifts = [];
 			JSON.parse(localStorage.getItem(`${slot}_lifts`)).forEach(lift=>{
 				const newLift = new Lift(lift.startX, lift.startY,terrain);
@@ -294,8 +297,14 @@
 				scene.add(newLift.towers.mesh);
 				scene.add(newLift.cable);
 			});
-			tm.load(slot);
-			terrain.load(slot);
+			JSON.parse(localStorage.getItem(`${slot}_riders`)).forEach(rider=>{
+				const newRider = new Rider(rider.gridX, rider.gridY,terrain);
+				newRider.load(rider);
+				riders.push(newRider);
+				scene.add(newRider.mesh);
+			});
+
+
 		}
 		init();
 		animate();

@@ -8,8 +8,10 @@ function Rider(gridX,gridY,terrain){
     this.velX=0;
     this.velY=0;
     this.velZ=0;
+    this.yaw=0;
     this.maxVel=0.5;
     this.maxRideVel=10;
+    this.maxSlope=50;
     this.radius=10;
     this.terrain=terrain;
     this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
@@ -130,7 +132,7 @@ function Rider(gridX,gridY,terrain){
                     x:closestLift.startX,
                     y:closestLift.startY
                 };
-                this.currentState='NAV2LIFT';
+                this.currentState = 'NAV2LIFT';
                 return;
             }
         }else{
@@ -168,6 +170,7 @@ function Rider(gridX,gridY,terrain){
                this.gridY = this.targetLift.endY;
                this.velX=0;
                this.velY=0;
+               this.yaw = this.targetLift.yaw;
                this.currentTarget = {x:this.gridX, y:this.gridY, z:this.terrain.iTerrain(this.gridX,this.gridY)};
                return;
             }
@@ -189,35 +192,41 @@ function Rider(gridX,gridY,terrain){
         let dz = (this.currentTarget.z - this.mesh.position.z)*this.terrain.gridWidth/this.terrain.meshWidth;
         let d = Math.sqrt(dx*dx+dy*dy);
         if(d<this.radius*this.terrain.gridWidth/this.terrain.meshWidth || this.mesh.position.z<this.currentTarget.z){
-            console.log("New target");
-            console.log(this.gridX,this.gridY,this.mesh.position.z);
+
             //Find next target
-            let itersLeft = 100;
-            do {
-                const a = Math.random()*Math.PI*2;
-                this.currentTarget.x = this.gridX + Math.cos(a) ;
-                this.currentTarget.y = this.gridY + Math.sin(a);
+            let best = {a:null,slope:0,trees:2};
+            const step = Math.random()>0.5?1:-1;//randomly choose which way to sweep for searching
+            for(let a = this.yaw - Math.PI/2; a<this.yaw+Math.PI/2;a+=0.1){
+
+                this.currentTarget.x = this.gridX + Math.cos(step*a);
+                this.currentTarget.y = this.gridY + Math.sin(step*a);
                 this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x-0.5,this.currentTarget.y-0.5)+this.radius;
-                if(!itersLeft--){
-                    this.currentState='IDLE';
-                    return;
+                const slope = this.mesh.position.z-this.currentTarget.z;
+                const i = Math.floor(this.currentTarget.x)+Math.floor(this.currentTarget.y)*this.terrain.gridWidth;
+                const i2 = Math.floor(this.currentTarget.x+Math.cos(step*a))+Math.floor(this.currentTarget.y+Math.sin(step*a))*this.terrain.gridWidth;
+                const i3 = Math.floor(this.currentTarget.x+2*Math.cos(step*a))+Math.floor(this.currentTarget.y+2*Math.sin(step*a))*this.terrain.gridWidth;
+                const maxTrees = 1.0/this.terrain.maxPerAcre
+                if(slope>best.slope && this.terrain.treemap[i]<best.trees && slope<this.maxSlope){
+                    best={a:step*a,slope,trees:this.terrain.treemap[i2]};
+                    //if(best.slope>this.maxSlope/4 && Math.random()>0.5){break;}//Randomly, if it's good enough go there
                 }
-            }while(
-                this.currentTarget.z>=this.mesh.position.z ||
-                this.terrain.treemap[Math.floor(this.currentTarget.x)+Math.floor(this.currentTarget.y)*terrain.gridWidth]>0.1
-            );
+            }
+            if(best.a===null){console.log("NO MORE SLOPE");this.currentState='IDLE';return;}
+            this.currentTarget.x = this.gridX + Math.cos(best.a);
+            this.currentTarget.y = this.gridY + Math.sin(best.a);
+            this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x-0.5,this.currentTarget.y-0.5)+this.radius;
 
             dx = this.currentTarget.x - this.gridX;
             dy = this.currentTarget.y - this.gridY;
             dz = (this.currentTarget.z - this.mesh.position.z)*this.terrain.gridWidth/this.terrain.meshWidth;
+            dz*=1-(best.trees*0.75);
             d = Math.sqrt(dx*dx+dy*dy);
             this.targetVelX = this.maxRideVel * -1*dz/d * dx/d;
             this.targetVelY = this.maxRideVel * -1*dz/d * dy/d;
-            console.log(this.currentTarget);
             return;
         }
-        this.velX += (this.targetVelX - this.velX)*0.05*dt;
-        this.velY += (this.targetVelY - this.velY)*0.05*dt;
+        this.velX += (this.targetVelX - this.velX)*0.5*dt;
+        this.velY += (this.targetVelY - this.velY)*0.5*dt;
         if(Math.abs(dt*this.velX)>Math.abs(dx)){
             this.gridX+=dx;
         }else {
@@ -233,6 +242,42 @@ function Rider(gridX,gridY,terrain){
         this.mesh.position.y = pos.y;
         this.mesh.position.z = pos.z;
     };
+
+    this.save = () => {
+        return {
+            gridX: this.gridX,
+            gridY: this.gridY,
+            velX: this.velX,
+            velY: this.velY,
+            velZ: this.velZ,
+            yaw: this.yaw,
+            maxVel: this.maxVel,
+            maxRideVel: this.maxRideVel,
+            name: this.name,
+            energy: this.energy,
+            targetLift: lifts.indexOf(this.targetLift),
+            currentLiftTower: this.currentLiftTower,
+            currentTarget: this.currentTarget,
+            currentState: this.currentState
+        };
+    };
+
+    this.load = (obj) => {
+        this.gridX=obj.gridX;
+        this.gridY=obj.gridY;
+        this.velX=obj.velX;
+        this.velY=obj.velY;
+        this.velZ=obj.velZ;
+        this.yaw=obj.yaw;
+        this.maxVel=obj.maxVel;
+        this.maxRideVel=obj.maxRideVel;
+        this.name = obj.name;
+        this.energy = obj.energy;
+        this.targetLift = lifts[obj.targetLift];
+        this.currentLiftTower = obj.currentLiftTower;
+        this.currentTarget = obj.currentTarget;
+        this.currentState = obj.currentState;
+    }
 
 
 
