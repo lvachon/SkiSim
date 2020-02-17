@@ -135,6 +135,20 @@ function GodCam( terrain, windowWidth, windowHeight ){
 
 	};
 
+	this.save = ()=>{
+		return {
+			targetX:this.targetX,
+			targetY:this.targetY,
+			targetYaw:this.targetYaw,
+			targetRadius:this.targetRadius,
+		}
+	}
+	this.load = (obj)=>{
+		this.targetYaw = obj.targetYaw;
+		this.targetRadius = obj.targetRadius;
+		this.setTarget(obj.targetX, obj.targetY);
+	}
+
 	this.setTarget(this.terrain.gridWidth/2, this.terrain.gridDepth/2);
 	this.doMovement();
 }

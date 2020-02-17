@@ -279,6 +279,7 @@
 			localStorage.setItem(`${slot}_cash`,CASH);
 			localStorage.setItem(`${slot}_lifts`, JSON.stringify(lifts.map(lift=>lift.save())));
 			localStorage.setItem(`${slot}_riders`, JSON.stringify(riders.map(lift=>lift.save())));
+			localStorage.setItem(`${slot}_cam`, JSON.stringify(godcam.save()));
 			tm.save(slot);
 			terrain.save(slot);
 		}
@@ -303,6 +304,8 @@
 				riders.push(newRider);
 				scene.add(newRider.mesh);
 			});
+			const gcdata = JSON.parse(localStorage.getItem(`${slot}_cam`));
+			if(gcdata){godcam.load(gcdata);}
 
 
 		}
