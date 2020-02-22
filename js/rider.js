@@ -69,9 +69,9 @@ function Rider(gridX,gridY,terrain){
 
     this.meshPosition = ()=>{
         return new THREE.Vector3(
-            this.terrain.meshWidth*this.gridX/this.terrain.gridWidth-this.terrain.meshWidth/2,
-            this.terrain.meshDepth*(this.terrain.gridDepth-this.gridY)/this.terrain.gridDepth-this.terrain.meshDepth/2,
-            this.terrain.iTerrain(this.gridX-0.5,this.gridY-0.5)+this.radius
+            this.terrain.meshWidth*this.gridX/(this.terrain.gridWidth-1)-this.terrain.meshWidth/2,
+            this.terrain.meshDepth*((this.terrain.gridDepth-1)-this.gridY)/(this.terrain.gridDepth-1)-this.terrain.meshDepth/2,
+            this.terrain.iTerrain(this.gridX,this.gridY)+this.radius
         );
     };
 
@@ -99,6 +99,7 @@ function Rider(gridX,gridY,terrain){
         const dy = this.currentTarget.y - this.gridY;
         if(Math.sqrt((dx*dx)+(dy*dy))<this.radius*(this.terrain.gridWidth/this.terrain.meshWidth)){
             this.currentState = this.nextState[this.currentState];
+            this.currentLiftTower=0;
             return;
         }
         const a = Math.atan2(dy, dx);
@@ -136,6 +137,7 @@ function Rider(gridX,gridY,terrain){
             }
         }else{
             console.log(`${this.name} is tired!`);
+            riders = riders.filter(r=>{return r.name!==this.name || r.energy!==this.energy});
         }
     }
 
@@ -167,10 +169,14 @@ function Rider(gridX,gridY,terrain){
                this.currentState = this.nextState[this.currentState];
                this.gridX = this.targetLift.endX;
                this.gridY = this.targetLift.endY;
+               const pos = this.meshPosition();
+               this.mesh.position.x = pos.x;
+               this.mesh.position.y = pos.y;
+               this.mesh.position.z = pos.z;
                this.velX=0;
                this.velY=0;
                this.yaw = this.targetLift.yaw;
-               this.currentTarget = {x:this.gridX, y:this.gridY, z:this.terrain.iTerrain(this.gridX,this.gridY)};
+               this.currentTarget = {x:this.gridX, y:this.gridY, z:this.terrain.iTerrain(this.gridX,this.gridY)+this.radius};
                return;
             }
         }
@@ -192,30 +198,32 @@ function Rider(gridX,gridY,terrain){
         let d = Math.sqrt(dx*dx+dy*dy);
         if(d<this.radius*this.terrain.gridWidth/this.terrain.meshWidth || dz>-0.01){
             //Find next target
-            let best = {a:null,slope:0,trees:1/this.terrain.maxPerAcre};
+            let best = {a:null,slope:-100000,trees:10/this.terrain.maxPerAcre};
             const step = Math.random()>0.5?1:-1;//randomly choose which way to sweep for searching
-            for(let a = this.yaw - Math.PI/2; a<this.yaw+Math.PI/2;a+=0.1){
+            for(let a = this.yaw - Math.PI/2; a<this.yaw+Math.PI/2;a+=0.01){
                 this.currentTarget.x = this.gridX + 0.5*Math.cos(step*a);
                 this.currentTarget.y = this.gridY + 0.5*Math.sin(step*a);
-                this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x-0.5,this.currentTarget.y-0.5)+this.radius;
+                this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x,this.currentTarget.y)+this.radius;
                 const slope = this.mesh.position.z-this.currentTarget.z;
                 const i = Math.floor(this.currentTarget.x)+Math.floor(this.currentTarget.y)*this.terrain.gridWidth;
                 if(slope>best.slope && this.terrain.treemap[i]<best.trees && slope<this.maxSlope){
                     best={a:step*a,slope,trees:best.trees};
                     if(best.slope>this.maxSlope/8 && Math.random()>0.25){break;}//Randomly, if it's good enough go there
+                }else{
+                    //console.log({trees:this.terrain.treemap[i],slope});
                 }
             }
-            if(best.a===null || best.slope<0.01*this.terrain.meshWidth/this.terrain.gridWidth){console.log("NO MORE SLOPE");this.currentState='IDLE';return;}
+            if(best.a===null || best.slope<0.01*this.terrain.meshWidth/this.terrain.gridWidth){console.log("NO MORE SLOPE",{best});this.currentState='IDLE';return;}
             this.currentTarget.x = this.gridX + 0.5*Math.cos(best.a);
             this.currentTarget.y = this.gridY + 0.5*Math.sin(best.a);
-            this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x-0.5,this.currentTarget.y-0.5)+this.radius;
+            this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x,this.currentTarget.y)+this.radius;
 
             dx = this.currentTarget.x - this.gridX;
             dy = this.currentTarget.y - this.gridY;
             dz = (this.currentTarget.z - this.mesh.position.z)*this.terrain.gridWidth/this.terrain.meshWidth;
             //dz*=1-(best.trees*0.75);
             d = Math.sqrt(dx*dx+dy*dy);
-            this.targetVel = this.maxRideVel*-1*dz/d;
+            this.targetVel = Math.max(this.maxVel, this.maxRideVel*-1*dz/d);
 
             return;
         }

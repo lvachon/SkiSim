@@ -20,7 +20,7 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 	this.workingPoints = [];
 	this.arrow = null;
 	this.maxPerAcre=20;
-
+	this.raycaster = new THREE.Raycaster();
 	this.init = ()=>{
 
 		this.geom = new THREE.PlaneBufferGeometry( this.meshWidth, this.meshDepth, this.gridWidth - 1, this.gridDepth - 1 );
@@ -67,9 +67,9 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		for(let i=0;i<treemap.length;i++){
 			let rand = mulberry32(i);
 			for(let j=1;j<this.maxPerAcre*this.treemap[i];j++){
-				const x = (i%this.gridWidth)+rand();
-				const y =  (Math.floor(i/this.gridWidth)+rand());
-				const meshPoint = this.gridToMesh(x,y);
+				const x = (i%(this.gridWidth))+rand()-0.5;
+				const y =  (Math.floor(i/(this.gridWidth))+rand()-0.5);
+				const meshPoint = this.gridToMesh(x,y,false);
 				this.trees.offsets.push(meshPoint.x,meshPoint.y,meshPoint.z+10);
 			}
 		}
@@ -88,7 +88,17 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		if(this.treemap[i]<=0){return true;}
 	}
 
-	this.iTerrain = (x, y) => {
+	this.iTerrain = (x, y, raycast=false) => {
+		if(raycast) {
+			const meshX = this.meshWidth * ((x+0.5) / (this.gridWidth-1) - 0.5);
+			const meshY = this.meshDepth * (((this.gridDepth-1)-y-0.5) / (this.gridDepth-1) - 0.5);
+			this.raycaster.set(new THREE.Vector3(meshX, meshY, this.maxHeight + 10), new THREE.Vector3(0, 0, -1));
+			const hits = this.raycaster.intersectObject(this.mesh);
+			if (hits.length) {
+				return hits[0].point.z;
+			}
+		}
+
 		//y=this.gridDepth-y;
 		let x1 = Math.floor(x);
 		let x2 = x1+1;
@@ -109,14 +119,14 @@ function Terrain(meshWidth, meshDepth, gridWidth, gridDepth, heightmap, treemap 
 		const zN = zNW * (1.0-px)+zNE*px;
 		const zS = zSW * (1.0-px)+zSE*px;
 
-		return zN * (1-py)+zS*py;
+		return zN * (1.0-py)+zS*py;
 	}
 
-	this.gridToMesh = (x,y)=>{
+	this.gridToMesh = (x,y,raycast=false)=>{
 		return {
-			x:this.meshWidth * (x/this.gridWidth-0.5),
-			y:this.meshDepth * ((this.gridDepth-y)/this.gridDepth-0.5),
-			z:this.iTerrain(x-0.5,y-0.5)
+			x:this.meshWidth * (x/(this.gridWidth-1)-0.5),
+			y:this.meshDepth * (((this.gridDepth-1)-y)/(this.gridDepth-1)-0.5),
+			z:this.iTerrain(x,y, raycast)
 		};
 	}
 

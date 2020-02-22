@@ -79,15 +79,31 @@
 			float:left;
 		}
 		#workers_ui {
-			background:#808080;
-			width:310px;
-			border:solid 1px;
-		}
+			 background:#808080;
+			 width:310px;
+			 border:solid 1px;
+		 }
 		#workers_ui thead {
 			font-weight:bold;
 		}
 
 		#workers_ui tr td {
+			background:#EEEEEE;
+			width:8em;
+			text-align:center;
+		}
+
+		#riders_ui {
+			background:#808080;
+			width:310px;
+			border:solid 1px;
+			float:left;
+		}
+		#riders_ui thead {
+			font-weight:bold;
+		}
+
+		#riders_ui tr td {
 			background:#EEEEEE;
 			width:8em;
 			text-align:center;
@@ -116,7 +132,7 @@
 		<div id='stats'>
 			<div id='cash_ui'>1000000</div>
 			<table id='workers_ui'></table>
-			<div id="tasks_ui"></div>
+			<div id="riders_ui"></div>
 		</div>
 	</body>
 	<script>
@@ -167,6 +183,15 @@
 			scene.add(terrain.trees.mesh);
 			scene.add(terrain.arrow.mesh);
 
+			const wireframe = new THREE.WireframeGeometry( terrain.geom );
+
+			const line = new THREE.LineSegments( wireframe );
+			line.material.depthTest = false;
+			line.material.opacity = 0.25;
+			line.material.transparent = true;
+
+			scene.add( line );
+
 			godcam = new GodCam( terrain, windowWidth, windowHeight );
 
 
@@ -203,11 +228,35 @@
 			});
 			const {x, y, z} = godcam.mousemove(terrain.mesh);
 			terrain.setSelectedPoint(x,y,z);
+			if(lifts.length>0){
+				if(Math.random()<lifts.length*0.0001){
+					const randLift = lifts[Math.floor(Math.random()*lifts.length)];
+					const newRider = new Rider(randLift.startX+Math.random()-0.5,randLift.startY+Math.random()-0.5,terrain);
+					riders.push(newRider);
+					scene.add(newRider.mesh);
+				}
+			}
 		}
 
 		function updateStats(){
 			cash_ui.innerHTML=`Cash: \$${Math.floor(CASH*100)/100}`;
 			workers_ui.innerHTML = tm.getWorkerTable();
+			riders_ui.innerHTML = `
+<table>
+	<thead>
+		<tr>
+			<td>Rider</td>
+			<td>Status</td>
+			<td>Position</td>
+		</tr>
+	</th>
+	<tbody>
+	${riders.map(rider=>{
+		return `<tr><td>${rider.name}</td><td>${rider.currentState}</td><td>${Math.floor(rider.gridX*10)/10},${Math.floor(rider.gridY*10)/10}</td></tr>`
+	}).join("\n")}
+	</tbody>
+</table>
+`;
 			setTimeout(this.updateStats,500);
 		}
 

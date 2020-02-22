@@ -126,8 +126,8 @@ function GodCam( terrain, windowWidth, windowHeight ){
 		const hits = this.raycaster.intersectObject(terrainM);
 		if(hits.length){
 			return {
-				x: (this.terrain.gridWidth * (hits[0].point.x/this.terrain.meshWidth+0.5)),
-				y: -1 * (this.terrain.gridDepth * (hits[0].point.y/this.terrain.meshDepth-0.5)),
+				x: ((this.terrain.gridWidth-1) * (hits[0].point.x/this.terrain.meshWidth+0.5)),
+				y: -1 * ((this.terrain.gridDepth-1) * (hits[0].point.y/this.terrain.meshDepth-0.5)),
 				z: hits[0].point.z
 			}
 		}
