@@ -8,9 +8,9 @@ function Rider(gridX,gridY,terrain){
     this.yaw=0;
     this.vel=0;
     this.targetVel=0;
-    this.maxVel=0.5;
-    this.maxRideVel=10;
-    this.maxSlope=150;
+    this.maxVel=0.5+0.25*Math.random();
+    this.maxRideVel=2.5+5*Math.random();
+    this.maxSlope=25+50*Math.random();
     this.radius=10;
     this.terrain=terrain;
     this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
@@ -95,6 +95,15 @@ function Rider(gridX,gridY,terrain){
     };
 
     this.doNav = (dt)=>{
+        const i = Math.floor(this.gridX)+this.terrain.gridWidth*Math.floor(this.gridY);
+        if(this.terrain.treemap[i]==0 && this.terrain.iTerrain(this.currentTarget.x,this.currentTarget.y)-this.mesh.position.z<-0.01*this.terrain.meshWidth/this.terrain.gridWidth){
+            if(Math.random()<0.01) {//To prevent pingponging
+                this.currentState = 'RIDE';
+                this.currentTarget.x = this.gridX;
+                this.currentTarget.y = this.gridY;
+                return;
+            }
+        }
         const dx = this.currentTarget.x - this.gridX;
         const dy = this.currentTarget.y - this.gridY;
         if(Math.sqrt((dx*dx)+(dy*dy))<this.radius*(this.terrain.gridWidth/this.terrain.meshWidth)){
@@ -138,6 +147,7 @@ function Rider(gridX,gridY,terrain){
         }else{
             console.log(`${this.name} is tired!`);
             riders = riders.filter(r=>{return r.name!==this.name || r.energy!==this.energy});
+            scene.remove(this.mesh);
         }
     }
 
@@ -198,22 +208,24 @@ function Rider(gridX,gridY,terrain){
         let d = Math.sqrt(dx*dx+dy*dy);
         if(d<this.radius*this.terrain.gridWidth/this.terrain.meshWidth || dz>-0.01){
             //Find next target
-            let best = {a:null,slope:-100000,trees:10/this.terrain.maxPerAcre};
+            let best = {a:null,slope:-100000,slopeDist:100000,trees:10/this.terrain.maxPerAcre};
             const step = Math.random()>0.5?1:-1;//randomly choose which way to sweep for searching
-            for(let a = this.yaw - Math.PI/2; a<this.yaw+Math.PI/2;a+=0.01){
+            for(let a = this.yaw - Math.PI; a<this.yaw+Math.PI;a+=0.01){
                 this.currentTarget.x = this.gridX + 0.5*Math.cos(step*a);
                 this.currentTarget.y = this.gridY + 0.5*Math.sin(step*a);
                 this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x,this.currentTarget.y)+this.radius;
                 const slope = this.mesh.position.z-this.currentTarget.z;
+                const slopeDist = Math.abs(slope-this.maxSlope/2);
                 const i = Math.floor(this.currentTarget.x)+Math.floor(this.currentTarget.y)*this.terrain.gridWidth;
-                if(slope>best.slope && this.terrain.treemap[i]<best.trees && slope<this.maxSlope){
-                    best={a:step*a,slope,trees:best.trees};
+                if(this.terrain.treemap[i]<=best.trees && slopeDist<=best.slopeDist){
+                    best={a:step*a,slope,slopeDist,trees:this.terrain.treemap[i]};
                     if(best.slope>this.maxSlope/8 && Math.random()>0.25){break;}//Randomly, if it's good enough go there
                 }else{
                     //console.log({trees:this.terrain.treemap[i],slope});
                 }
             }
             if(best.a===null || best.slope<0.01*this.terrain.meshWidth/this.terrain.gridWidth){console.log("NO MORE SLOPE",{best});this.currentState='IDLE';return;}
+            this.yaw = best.a;
             this.currentTarget.x = this.gridX + 0.5*Math.cos(best.a);
             this.currentTarget.y = this.gridY + 0.5*Math.sin(best.a);
             this.currentTarget.z = this.terrain.iTerrain(this.currentTarget.x,this.currentTarget.y)+this.radius;
