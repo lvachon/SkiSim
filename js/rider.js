@@ -317,20 +317,10 @@ function Rider(gridX,gridY,terrain){
         this.currentTarget = obj.currentTarget;
         this.currentState = obj.currentState;
     }
+    this.mesh = models.models['snowboarder'].clone();
+    this.mesh.scale.x=2;
+    this.mesh.scale.y=2;
+    this.mesh.scale.z=2;
 
-    var loader = new THREE.GLTFLoader();
-    loader.load( 'obj/snowboarder.glb', gltf=>{
-        this.scene = gltf.scene;
-        this.mesh = this.scene.children[0];
-        this.mesh.scale.x=2;
-        this.mesh.scale.y=2;
-        this.mesh.scale.z=2;
-        console.log(this.mesh);
-        const pos = this.meshPosition();
-        this.mesh.position.x = pos.x;
-        this.mesh.position.y = pos.y;
-        this.mesh.position.z = pos.z;
-        scene.add(this.mesh);
-    });
 
 }

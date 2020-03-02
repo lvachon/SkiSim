@@ -11,7 +11,7 @@ function Agent(gridX,gridY,terrain){
 	this.radius=10;
 	this.terrain=terrain;
 	this.name = NAMES[Math.floor(Math.random()*NAMES.length)];
-	
+	/*
 	this.verts = [
 		0, 0, -1, 
 		0.7236, -0.52572, -0.447215, 
@@ -53,7 +53,7 @@ function Agent(gridX,gridY,terrain){
 	this.colors = [];
 	for(i=0;i<this.verts.length;i+=3){
 		this.colors.push(1,0,0);
-	}
+	}*/
 
 	this.meshPosition = ()=>{
 		return new THREE.Vector3(
@@ -92,6 +92,7 @@ function Agent(gridX,gridY,terrain){
 			return;
 		}
 		const a = Math.atan2(dy, dx);
+		this.yaw = a;
 		const velX = Math.cos(a)*this.maxVel;
 		const velY = Math.sin(a)*this.maxVel;
 		this.gridX+=velX*dt;
@@ -100,6 +101,7 @@ function Agent(gridX,gridY,terrain){
 		this.mesh.position.x = pos.x;
 		this.mesh.position.y = pos.y;
 		this.mesh.position.z = pos.z;
+		this.mesh.rotation.z = Math.PI/2-this.yaw;
 		CASH-=dt*10;
 	};
 
@@ -118,7 +120,7 @@ function Agent(gridX,gridY,terrain){
 		}
 	};
 
-
+	/*
 	this.geom = new THREE.BufferGeometry();
 	this.geom.setIndex(this.indicies);
 	this.geom.setAttribute('position',new THREE.Float32BufferAttribute(this.verts,3));
@@ -129,7 +131,11 @@ function Agent(gridX,gridY,terrain){
 		side: THREE.DoubleSide,
 		vertexColors: THREE.VertexColors
 	});
-	this.mesh = new THREE.Mesh(this.geom, this.mat);
+	this.mesh = new THREE.Mesh(this.geom, this.mat);*/
+	this.mesh = models.models['truck'].clone();
+	this.mesh.scale.x=2;
+	this.mesh.scale.y=2;
+	this.mesh.scale.z=2;
 	const pos = this.meshPosition();
 	this.mesh.position.x = pos.x;
 	this.mesh.position.y = pos.y;

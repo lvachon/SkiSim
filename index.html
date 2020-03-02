@@ -2,6 +2,7 @@
 	<head>
 		<script src='js/three.min.js'></script>
 		<script src='js/GLTFLoader.js'></script>
+		<script src='js/models.js'></script>
 		<script src='obj/arrow.js'></script>
 		<script src='obj/lifthouse.js'></script>
 		<script src='obj/tower.js'></script>
@@ -13,6 +14,7 @@
 		<script src='js/rider.js'></script>
 		<script src='js/tasks.js'></script>
 		<script src='js/lift.js'></script>
+		<script src='js/ui.js'></script>
 		<script src='img/washington.js'></script>
 
 		<title>Ski Resort Sim</title>
@@ -137,7 +139,6 @@
 		</div>
 	</body>
 	<script>
-		let camera = null;
 		let clock = null;
 		let scene = null;
 		let godcam = null;
@@ -150,8 +151,6 @@
 		let CASH=10000000;
 		const gridWidth=128;
 		const gridDepth=128;
-		const halfWW = gridWidth/2;
-		const halfWD = gridDepth/2;
 
 		const windowWidth = 1240;
 		const windowHeight = 768;
@@ -160,7 +159,6 @@
 		const meshDepth = 26624;
 		const maxHeight = 3000;
 		let toolMode = "";
-
 
 		let treemap = [];
 		heightmap = heightmap.map(x=>maxHeight*x/255.0);
@@ -195,7 +193,6 @@
 
 			godcam = new GodCam( terrain, windowWidth, windowHeight );
 
-
 			tm = new Tasks(terrain, []);
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -209,7 +206,7 @@
 			render_container.onmousemove = mousemove;
 			render_container.oncontextmenu = (event)=>{event.preventDefault();return false;};
 			updateStats();
-
+			animate();
 		}
 		function animate(){
 			requestAnimationFrame( animate );
@@ -234,97 +231,12 @@
 					const randLift = lifts[Math.floor(Math.random()*lifts.length)];
 					const newRider = new Rider(randLift.startX+Math.random()-0.5,randLift.startY+Math.random()-0.5,terrain);
 					riders.push(newRider);
-					//scene.add(newRider.mesh);
+					scene.add(newRider.mesh);
 				}
 			}
 		}
 
-		function updateStats(){
-			cash_ui.innerHTML=`Cash: \$${Math.floor(CASH*100)/100}`;
-			workers_ui.innerHTML = tm.getWorkerTable();
-			riders_ui.innerHTML = `
-<table>
-	<thead>
-		<tr>
-			<td>Rider</td>
-			<td>Status</td>
-			<td>Position</td>
-		</tr>
-	</th>
-	<tbody>
-	${riders.map(rider=>{
-		return `<tr><td>${rider.name}</td><td>${rider.currentState}</td><td>${Math.floor(rider.gridX*10)/10},${Math.floor(rider.gridY*10)/10}</td></tr>`
-	}).join("\n")}
-	</tbody>
-</table>
-`;
-			setTimeout(this.updateStats,500);
-		}
 
-		function keydown(event){
-			godcam.keydown(event);
-		}
-		function keyup(event){
-			godcam.keyup(event);
-		}
-		function mousemove(event){
-			godcam.mouseX = event.offsetX;
-			godcam.mouseY = event.offsetY;
-		}
-		function mousedown(event){
-			const {x, y, z} = godcam.mousemove(terrain.mesh);
-			if(x<0||y<0||z<0){
-				return;
-			}
-			if(toolMode==='ADDWORKER'){
-				const newWorker = new Agent(x,y,terrain);
-				CASH-=500;
-				tm.workers.push(newWorker);
-				scene.add(newWorker.mesh);
-				event.preventDefault();
-				return false;
-			}
-			if(toolMode==='ADDRIDER'){
-				const newRider = new Rider(x,y,terrain);
-				riders.push(newRider);
-				//scene.add(newRider.mesh);
-				event.preventDefault();
-				return false;
-			}
-			if(toolMode==='CLEARCUT'){
-				tm.addTask(x,y,'CLEARCUT');
-			}
-
-			if(toolMode==='BUILDLIFTTOP'){
-				if(!maybeLift){return false;}
-				const i = Math.floor(x)+Math.floor(y)*gridWidth;
-				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
-				CASH-=10000;
-				maybeLift.setEnd(x,y);
-				CASH-=1000*maybeLift.towerCount;
-				scene.add(maybeLift.topHouse.mesh);
-				scene.add(maybeLift.towers.mesh);
-				scene.add(maybeLift.cable);
-				lifts.push(maybeLift);
-				setToolMode('NONE');
-			}
-
-			if(toolMode==='BUILDLIFTBASE'){
-				const i = Math.floor(x)+Math.floor(y)*gridWidth;
-				if(terrain.treemap[i]>0){tm.addTask(x,y,'CLEARCUT');}
-				CASH-=10000;
-				maybeLift = new Lift(x,y,terrain);
-				scene.add(maybeLift.baseHouse.mesh);
-				setToolMode('BUILDLIFTTOP');
-			}
-			terrain.setSelectedPoint(x,y,z);
-
-		}
-		function setToolMode(mode){
-			toolMode = mode;
-			Array.from(document.getElementsByTagName("button")).forEach(elem=>{elem.classList.remove("active");});
-			Array.from(document.getElementsByTagName("button")).filter(elem=>elem.attributes.rel&&elem.attributes.rel.value==mode)[0].classList.add("active");
-		}
 		function saveGame(slot){
 			localStorage.setItem(`${slot}_cash`,CASH);
 			localStorage.setItem(`${slot}_lifts`, JSON.stringify(lifts.map(lift=>lift.save())));
@@ -359,8 +271,8 @@
 
 
 		}
-		init();
-		animate();
+		models = new Models(init);
+
 	</script>
 </html>	
 
