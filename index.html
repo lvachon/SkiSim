@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<script src='js/three.min.js'></script>
+		<script src='js/GLTFLoader.js'></script>
 		<script src='obj/arrow.js'></script>
 		<script src='obj/lifthouse.js'></script>
 		<script src='obj/tower.js'></script>
@@ -233,7 +234,7 @@
 					const randLift = lifts[Math.floor(Math.random()*lifts.length)];
 					const newRider = new Rider(randLift.startX+Math.random()-0.5,randLift.startY+Math.random()-0.5,terrain);
 					riders.push(newRider);
-					scene.add(newRider.mesh);
+					//scene.add(newRider.mesh);
 				}
 			}
 		}
@@ -286,7 +287,7 @@
 			if(toolMode==='ADDRIDER'){
 				const newRider = new Rider(x,y,terrain);
 				riders.push(newRider);
-				scene.add(newRider.mesh);
+				//scene.add(newRider.mesh);
 				event.preventDefault();
 				return false;
 			}

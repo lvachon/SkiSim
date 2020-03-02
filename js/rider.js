@@ -24,6 +24,7 @@ function Rider(gridX,gridY,terrain){
         'LIFT':'RIDE',
         'RIDE':'IDLE'
     };
+    /*
     this.verts = [
         0, 0, -1,
         0.7236, -0.52572, -0.447215,
@@ -67,6 +68,21 @@ function Rider(gridX,gridY,terrain){
         this.colors.push(0,0,1);
     }
 
+    this.geom = new THREE.BufferGeometry();
+    this.geom.setIndex(this.indicies);
+    this.geom.setAttribute('position',new THREE.Float32BufferAttribute(this.verts,3));
+    this.geom.setAttribute('color',new THREE.Float32BufferAttribute(this.colors,3));
+    this.geom.computeVertexNormals();
+    this.geom.computeFaceNormals();
+    this.mat = new THREE.MeshPhongMaterial({
+        side: THREE.DoubleSide,
+        vertexColors: THREE.VertexColors
+    });
+    this.mesh = new THREE.Mesh(this.geom, this.mat);
+    */
+
+
+
     this.meshPosition = ()=>{
         return new THREE.Vector3(
             this.terrain.meshWidth*this.gridX/(this.terrain.gridWidth-1)-this.terrain.meshWidth/2,
@@ -109,17 +125,19 @@ function Rider(gridX,gridY,terrain){
         if(Math.sqrt((dx*dx)+(dy*dy))<this.radius*(this.terrain.gridWidth/this.terrain.meshWidth)){
             this.currentState = this.nextState[this.currentState];
             this.currentLiftTower=0;
+
             return;
         }
-        const a = Math.atan2(dy, dx);
-        const velX = Math.cos(a)*this.maxVel;
-        const velY = Math.sin(a)*this.maxVel;
+        this.yaw = Math.atan2(dy, dx);
+        const velX = Math.cos(this.yaw)*this.maxVel;
+        const velY = Math.sin(this.yaw)*this.maxVel;
         this.gridX+=velX*dt;
         this.gridY+=velY*dt;
         const pos = this.meshPosition();
         this.mesh.position.x = pos.x;
         this.mesh.position.y = pos.y;
         this.mesh.position.z = pos.z;
+        this.mesh.rotation.z = Math.PI-this.yaw;
         this.energy-=dt*0.002;
     };
 
@@ -153,6 +171,7 @@ function Rider(gridX,gridY,terrain){
 
     this.doLift = (dt)=>{
         if(!this.targetLift){return;}
+        this.yaw = this.targetLift.yaw;
         let towerPos = null;
 
         if(this.currentLiftTower==this.targetLift.towerCount){
@@ -197,7 +216,7 @@ function Rider(gridX,gridY,terrain){
         this.mesh.position.x+=this.velX*dt;
         this.mesh.position.y+=this.velY*dt;
         this.mesh.position.z+=this.velZ*dt;
-
+        this.mesh.rotation.z = Math.PI-this.yaw;
         this.energy-=dt*0.001;
     };
 
@@ -258,6 +277,7 @@ function Rider(gridX,gridY,terrain){
         this.mesh.position.x = pos.x;
         this.mesh.position.y = pos.y;
         this.mesh.position.z = pos.z;
+        this.mesh.rotation.z = Math.PI-this.yaw;
         this.energy -= 0.01*dt;
     };
 
@@ -298,26 +318,19 @@ function Rider(gridX,gridY,terrain){
         this.currentState = obj.currentState;
     }
 
-
-
-    this.geom = new THREE.BufferGeometry();
-    this.geom.setIndex(this.indicies);
-    this.geom.setAttribute('position',new THREE.Float32BufferAttribute(this.verts,3));
-    this.geom.setAttribute('color',new THREE.Float32BufferAttribute(this.colors,3));
-    this.geom.computeVertexNormals();
-    this.geom.computeFaceNormals();
-    this.mat = new THREE.MeshPhongMaterial({
-        side: THREE.DoubleSide,
-        vertexColors: THREE.VertexColors
+    var loader = new THREE.GLTFLoader();
+    loader.load( 'obj/snowboarder.glb', gltf=>{
+        this.scene = gltf.scene;
+        this.mesh = this.scene.children[0];
+        this.mesh.scale.x=2;
+        this.mesh.scale.y=2;
+        this.mesh.scale.z=2;
+        console.log(this.mesh);
+        const pos = this.meshPosition();
+        this.mesh.position.x = pos.x;
+        this.mesh.position.y = pos.y;
+        this.mesh.position.z = pos.z;
+        scene.add(this.mesh);
     });
-    this.mesh = new THREE.Mesh(this.geom, this.mat);
-    const pos = this.meshPosition();
-    this.mesh.position.x = pos.x;
-    this.mesh.position.y = pos.y;
-    this.mesh.position.z = pos.z;
-
-
-
-
 
 }
